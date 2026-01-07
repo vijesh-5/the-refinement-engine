@@ -2,104 +2,203 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* Artifex Design System
+   A premium, dark-first writing workspace
+   Inspired by Perplexity's calm intelligence
 */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    /* Core palette - Dark theme only */
+    --background: 240 6% 6%;
+    --background-elevated: 240 5% 8%;
+    --background-surface: 240 5% 10%;
+    --background-hover: 240 5% 12%;
+    
+    --foreground: 0 0% 98%;
+    --foreground-muted: 240 4% 46%;
+    --foreground-subtle: 240 4% 36%;
+    
+    /* Accent - Purple (used sparingly) */
+    --primary: 263 70% 71%;
+    --primary-hover: 263 70% 78%;
+    --primary-muted: 263 40% 25%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Secondary surfaces */
+    --secondary: 240 5% 14%;
+    --secondary-foreground: 0 0% 98%;
+    
+    --muted: 240 5% 18%;
+    --muted-foreground: 240 4% 56%;
+    
+    --accent: 263 30% 18%;
+    --accent-foreground: 263 70% 85%;
+    
+    /* Functional colors */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --success: 142 72% 45%;
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+    
+    /* UI elements */
+    --card: 240 5% 8%;
+    --card-foreground: 0 0% 98%;
+    
+    --popover: 240 5% 10%;
+    --popover-foreground: 0 0% 98%;
+    
+    --border: 240 5% 16%;
+    --border-subtle: 240 5% 12%;
+    --input: 240 5% 14%;
+    --ring: 263 70% 71%;
+    
+    --radius: 0.625rem;
+    
+    /* Sidebar */
+    --sidebar-background: 240 6% 7%;
+    --sidebar-foreground: 240 4% 56%;
+    --sidebar-primary: 263 70% 71%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 240 5% 12%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 5% 12%;
+    --sidebar-ring: 263 70% 71%;
+    
+    /* Gradients */
+    --gradient-subtle: linear-gradient(180deg, hsl(240 5% 10%) 0%, hsl(240 6% 6%) 100%);
+    --gradient-glow: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(263 70% 50% / 0.15), transparent);
+    --gradient-purple: linear-gradient(135deg, hsl(263 70% 71%) 0%, hsl(280 70% 65%) 100%);
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4), 0 2px 4px -2px hsl(0 0% 0% / 0.3);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.4), 0 4px 6px -4px hsl(0 0% 0% / 0.3);
+    --shadow-glow: 0 0 40px -10px hsl(263 70% 50% / 0.35);
   }
-}
 
-@layer base {
   * {
     @apply border-border;
   }
 
+  html {
+    @apply scroll-smooth;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /* Typography scale */
+  h1 {
+    @apply text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight leading-tight;
+  }
+
+  h2 {
+    @apply text-2xl md:text-3xl lg:text-4xl font-semibold tracking-tight;
+  }
+
+  h3 {
+    @apply text-xl md:text-2xl font-semibold tracking-tight;
+  }
+
+  h4 {
+    @apply text-lg font-medium;
+  }
+
+  p {
+    @apply leading-relaxed;
+  }
+}
+
+@layer components {
+  /* Focus ring */
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  /* Subtle glass effect */
+  .glass {
+    @apply backdrop-blur-xl bg-background-surface/80;
+  }
+
+  /* Glow effect for hero elements */
+  .glow-purple {
+    box-shadow: 0 0 60px -15px hsl(263 70% 50% / 0.4);
+  }
+
+  /* Content container */
+  .container-narrow {
+    @apply max-w-3xl mx-auto px-4;
+  }
+
+  .container-wide {
+    @apply max-w-7xl mx-auto px-4 md:px-6 lg:px-8;
+  }
+
+  /* Smooth transitions */
+  .transition-default {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  /* Text gradient */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400;
+  }
+
+  /* Workspace card */
+  .workspace-card {
+    @apply bg-card rounded-xl border border-border-subtle p-6 transition-default hover:border-border hover:bg-background-hover;
+  }
+
+  /* Metric indicator */
+  .metric-bar {
+    @apply h-1.5 rounded-full bg-muted overflow-hidden;
+  }
+
+  .metric-fill {
+    @apply h-full rounded-full bg-gradient-to-r from-primary to-purple-400 transition-all duration-500;
+  }
+}
+
+@layer utilities {
+  /* Custom scrollbar */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground;
+  }
+
+  /* Animation delays */
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+  .animation-delay-400 {
+    animation-delay: 400ms;
   }
 }
