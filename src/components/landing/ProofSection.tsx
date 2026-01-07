@@ -24,7 +24,7 @@ const improvements = [
 
 export function ProofSection() {
   return (
-    <section className="py-20 md:py-32 border-t border-border-subtle bg-background-elevated">
+    <section id="features" className="section-spacing border-t border-border-subtle bg-background-elevated">
       <div className="container-wide">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-semibold tracking-tight mb-4">
