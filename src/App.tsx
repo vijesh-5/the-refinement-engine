@@ -8,6 +8,12 @@ import Dashboard from "./pages/Dashboard";
 import BlogCreator from "./pages/BlogCreator";
 import AdCopywriter from "./pages/AdCopywriter";
 import ProductDescriptions from "./pages/ProductDescriptions";
+import Pricing from "./pages/Pricing";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Settings from "./pages/Settings";
+import Library from "./pages/Library";
+import Templates from "./pages/Templates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,10 +26,16 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="/app" element={<Dashboard />} />
           <Route path="/app/blog" element={<BlogCreator />} />
           <Route path="/app/ads" element={<AdCopywriter />} />
           <Route path="/app/products" element={<ProductDescriptions />} />
+          <Route path="/app/content" element={<Library />} />
+          <Route path="/app/templates" element={<Templates />} />
+          <Route path="/app/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
