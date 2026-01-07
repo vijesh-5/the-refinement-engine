@@ -64,29 +64,29 @@ export default function Pricing() {
     <div className="min-h-screen bg-background">
       <LandingNav />
       
-      <main className="pt-32 pb-20 md:pt-40 md:pb-32">
+      <main className="pt-32 pb-24 md:pt-44 md:pb-32">
         {/* Background glow */}
         <div className="absolute inset-0 bg-gradient-glow pointer-events-none" />
         
         <div className="container-wide relative z-10">
           {/* Header */}
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h1 className="text-4xl md:text-5xl font-semibold tracking-tight mb-6">
+          <div className="text-center max-w-2xl mx-auto mb-20">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight mb-6">
               Simple, transparent pricing
             </h1>
-            <p className="text-lg text-foreground-muted">
+            <p className="text-lg md:text-xl text-foreground-muted leading-relaxed">
               Start free. Upgrade when you need more power. No hidden fees, no surprises.
             </p>
           </div>
 
           {/* Plans */}
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {plans.map((plan) => (
               <div
                 key={plan.name}
                 className={`relative rounded-2xl p-8 transition-all duration-300 ${
                   plan.popular
-                    ? "bg-gradient-to-b from-primary/10 to-background-surface border-2 border-primary/30 shadow-glow"
+                    ? "bg-gradient-to-b from-primary/10 to-background-surface border-2 border-primary/30 shadow-glow scale-105"
                     : "bg-background-surface border border-border-subtle hover:border-border"
                 }`}
               >
@@ -98,27 +98,27 @@ export default function Pricing() {
                   </div>
                 )}
 
-                <div className="mb-6">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
+                <div className="mb-8">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-5 ${
                     plan.popular 
                       ? "bg-primary/20 text-primary" 
                       : "bg-background-hover text-foreground-muted"
                   }`}>
-                    <plan.icon className="w-6 h-6" />
+                    <plan.icon className="w-7 h-7" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-1">{plan.name}</h3>
+                  <h3 className="text-xl font-semibold mb-2">{plan.name}</h3>
                   <p className="text-sm text-foreground-muted">{plan.description}</p>
                 </div>
 
-                <div className="mb-6">
-                  <span className="text-4xl font-bold">{plan.price}</span>
-                  <span className="text-foreground-muted">{plan.period}</span>
+                <div className="mb-8">
+                  <span className="text-5xl font-bold">{plan.price}</span>
+                  <span className="text-foreground-muted text-lg">{plan.period}</span>
                 </div>
 
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-4 mb-10">
                   {plan.features.map((feature, i) => (
                     <li key={i} className="flex items-center gap-3 text-sm">
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
                         plan.popular 
                           ? "bg-primary/20 text-primary" 
                           : "bg-success/10 text-success"
@@ -143,11 +143,11 @@ export default function Pricing() {
           </div>
 
           {/* FAQ */}
-          <div className="mt-24 max-w-2xl mx-auto">
-            <h2 className="text-2xl font-semibold text-center mb-12">
+          <div className="mt-32 max-w-2xl mx-auto">
+            <h2 className="text-2xl md:text-3xl font-semibold text-center mb-12">
               Frequently asked questions
             </h2>
-            <div className="space-y-6">
+            <div className="space-y-5">
               {[
                 {
                   q: "Can I cancel anytime?",
@@ -162,9 +162,9 @@ export default function Pricing() {
                   a: "We offer a 14-day money-back guarantee. If you're not satisfied, just reach out and we'll refund your payment."
                 },
               ].map((item, i) => (
-                <div key={i} className="p-6 rounded-xl bg-background-surface border border-border-subtle">
-                  <h3 className="font-semibold mb-2">{item.q}</h3>
-                  <p className="text-sm text-foreground-muted">{item.a}</p>
+                <div key={i} className="p-6 rounded-2xl bg-background-surface border border-border-subtle">
+                  <h3 className="font-semibold text-lg mb-3">{item.q}</h3>
+                  <p className="text-foreground-muted leading-relaxed">{item.a}</p>
                 </div>
               ))}
             </div>

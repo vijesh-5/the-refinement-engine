@@ -9,10 +9,10 @@ export function LandingNav() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border-subtle bg-background/80 backdrop-blur-xl">
       <div className="container-wide">
-        <nav className="flex items-center justify-between h-16">
+        <nav className="flex items-center justify-between h-18 py-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+          <Link to="/" className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
               <PenLine className="w-4 h-4 text-primary-foreground" />
             </div>
             <span className="text-lg font-semibold">Artifex</span>
@@ -20,13 +20,13 @@ export function LandingNav() {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8">
-            <Link to="#features" className="text-sm text-foreground-muted hover:text-foreground transition-colors">
-              Features
-            </Link>
-            <Link to="#use-cases" className="text-sm text-foreground-muted hover:text-foreground transition-colors">
+            <a href="#how-it-works" className="text-sm text-foreground-muted hover:text-foreground transition-colors">
+              How It Works
+            </a>
+            <a href="#use-cases" className="text-sm text-foreground-muted hover:text-foreground transition-colors">
               Use Cases
-            </Link>
-            <Link to="#pricing" className="text-sm text-foreground-muted hover:text-foreground transition-colors">
+            </a>
+            <Link to="/pricing" className="text-sm text-foreground-muted hover:text-foreground transition-colors">
               Pricing
             </Link>
           </div>
@@ -37,7 +37,7 @@ export function LandingNav() {
               <Link to="/login">Sign in</Link>
             </Button>
             <Button size="sm" asChild>
-              <Link to="/app">Get Started</Link>
+              <Link to="/signup">Get Started</Link>
             </Button>
           </div>
 
@@ -52,23 +52,23 @@ export function LandingNav() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border-subtle animate-fade-in">
-            <div className="flex flex-col gap-4">
-              <Link to="#features" className="text-sm text-foreground-muted hover:text-foreground">
-                Features
-              </Link>
-              <Link to="#use-cases" className="text-sm text-foreground-muted hover:text-foreground">
+          <div className="md:hidden py-6 border-t border-border-subtle animate-fade-in">
+            <div className="flex flex-col gap-5">
+              <a href="#how-it-works" className="text-sm text-foreground-muted hover:text-foreground">
+                How It Works
+              </a>
+              <a href="#use-cases" className="text-sm text-foreground-muted hover:text-foreground">
                 Use Cases
-              </Link>
-              <Link to="#pricing" className="text-sm text-foreground-muted hover:text-foreground">
+              </a>
+              <Link to="/pricing" className="text-sm text-foreground-muted hover:text-foreground">
                 Pricing
               </Link>
-              <div className="flex gap-3 pt-4 border-t border-border-subtle">
+              <div className="flex gap-3 pt-5 border-t border-border-subtle">
                 <Button variant="outline" size="sm" className="flex-1" asChild>
                   <Link to="/login">Sign in</Link>
                 </Button>
                 <Button size="sm" className="flex-1" asChild>
-                  <Link to="/app">Get Started</Link>
+                  <Link to="/signup">Get Started</Link>
                 </Button>
               </div>
             </div>

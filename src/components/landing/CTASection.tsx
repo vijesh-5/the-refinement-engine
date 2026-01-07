@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 
 export function CTASection() {
   return (
-    <section className="py-20 md:py-32 border-t border-border-subtle relative overflow-hidden">
+    <section className="section-spacing border-t border-border-subtle relative overflow-hidden">
       {/* Background glow */}
       <div className="absolute inset-0 bg-gradient-glow pointer-events-none opacity-50" />
 
