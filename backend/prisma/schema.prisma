@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String?
+  lastName  String?
+  plan      UserPlan @default(FREE)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contents      Content[]
+  refreshTokens RefreshToken[]
+
+  @@index([email])
+  @@map("users")
+}
+
+enum UserPlan {
+  FREE
+  PRO
+}
+
+model Content {
+  id            String        @id @default(uuid())
+  title         String
+  body          String        @db.Text
+  status        ContentStatus @default(DRAFT)
+  contentType   String        @default("general") // blog, ad, product, general
+  inputData     Json?         // Store original input parameters
+  generatedOutput Json?       // Store structured AI output
+  templateId    String?
+  userId        String
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template      Template?     @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+  @@index([contentType])
+  @@index([createdAt])
+  @@map("contents")
+}
+
+enum ContentStatus {
+  DRAFT
+  COMPLETE
+}
+
+model Template {
+  id          String   @id @default(uuid())
+  name        String
+  description String   @db.Text
+  category    String
+  prompt      String   @db.Text
+  icon        String?
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  contents    Content[]
+
+  @@index([category])
+  @@index([isActive])
+  @@map("templates")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
