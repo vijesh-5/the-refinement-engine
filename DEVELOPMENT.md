@@ -16,9 +16,10 @@ npm run dev
 **Terminal 2 - Frontend:**
 
 ```powershell
-# From project root
+cd frontend
 npm run dev
 ```
+
 
 ✅ Frontend will run on `http://localhost:5173` (or the port Vite assigns)
 
@@ -141,6 +142,7 @@ fetch("http://localhost:5000/api/health")
   .then((r) => r.json())
   .then(console.log);
 
+
 // Test 2: Get templates (public endpoint)
 fetch("http://localhost:5000/api/templates")
   .then((r) => r.json())
@@ -200,7 +202,9 @@ cd backend
 npm run dev
 
 # Terminal 2 (new terminal)
+cd frontend
 npm run dev
+
 ```
 
 ### View Backend Logs:
@@ -223,7 +227,8 @@ Backend terminal shows:
 ## Next Steps
 
 1. **Start Backend:** `cd backend && npm run dev`
-2. **Start Frontend:** `npm run dev` (in new terminal)
+2. **Start Frontend:** `cd frontend && npm run dev` (in new terminal)
+
 3. **Test in Browser:** Visit `http://localhost:5173`
 4. **Check Console:** Look for any connection errors
 5. **Test Login/Signup:** Use the forms in your app
