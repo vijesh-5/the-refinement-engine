@@ -7,7 +7,8 @@ import {
   FileText, 
   LayoutTemplate, 
   Settings,
-  ChevronRight
+  ChevronRight,
+  Briefcase
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -70,6 +71,12 @@ export function AppSidebar() {
             icon={<LayoutDashboard className="w-4 h-4" />} 
             label="Dashboard" 
             isActive={pathname === '/app'}
+          />
+          <NavItem 
+            to="/app/brands" 
+            icon={<Briefcase className="w-4 h-4" />} 
+            label="Brand Identity" 
+            isActive={pathname === '/app/brands'}
           />
         </NavGroup>
 

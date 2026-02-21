@@ -78,12 +78,33 @@ export interface ContentVersion {
   createdAt: string;
 }
 
+export interface BrandProfile {
+  id: string;
+  name: string;
+  industry?: string;
+  tone: string;
+  targetAudience?: string;
+  brandVoice?: string;
+  bannedWords: string[];
+  keySellingPoints: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Helper to handle API responses
 const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || data.message || "API request failed");
+    let errorMessage = data.error || data.message || "API request failed";
+    
+    // Handle Zod validation details if present
+    if (data.details && Array.isArray(data.details)) {
+      const details = data.details.map((d: any) => `${d.field}: ${d.message}`).join(", ");
+      errorMessage = `Validation Error: ${details}`;
+    }
+    
+    throw new Error(errorMessage);
   }
 
   return data;
@@ -129,6 +150,62 @@ export const login = async (data: Record<string, string>) => {
   return result;
 };
 
+// Centralized wrapper for authenticated requests with automated token refresh
+const fetchWithAuth = async <T>(
+  url: string,
+  options: RequestInit = {}
+): Promise<ApiResponse<T>> => {
+  const token = getAuthToken();
+  const headers = {
+    ...options.headers,
+    Authorization: `Bearer ${token}`,
+  };
+
+  const response = await fetch(url, { ...options, headers });
+
+  // If unauthorized, attempt to refresh token
+  if (response.status === 401 && !url.includes("/auth/refresh")) {
+    const refreshToken = localStorage.getItem("refreshToken");
+    if (!refreshToken) {
+      logout();
+      throw new Error("Session expired. Please login again.");
+    }
+
+    try {
+      // Attempt to refresh
+      const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (refreshResponse.ok) {
+        const refreshResult = (await refreshResponse.json()) as ApiResponse<AuthResponse>;
+        if (refreshResult.success && refreshResult.data) {
+          // Store new tokens
+          localStorage.setItem("accessToken", refreshResult.data.accessToken);
+          localStorage.setItem("refreshToken", refreshResult.data.refreshToken);
+
+          // Retry the original request with new token
+          const newToken = refreshResult.data.accessToken;
+          return fetchWithAuth<T>(url, {
+            ...options,
+            headers: { ...options.headers, Authorization: `Bearer ${newToken}` },
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Token refresh failed", error);
+    }
+
+    // If refresh fails, cleanup and throw
+    logout();
+    throw new Error("Session expired. Please login again.");
+  }
+
+  return handleResponse<T>(response);
+};
+
 export const logout = async () => {
   const refreshToken = localStorage.getItem("refreshToken");
 
@@ -156,19 +233,13 @@ export const generateBlog = async (data: {
   keywords?: string[];
   length: "short" | "medium" | "long";
   intent?: string;
+  brandId?: string;
 }) => {
-  const token = getAuthToken();
-
-  const response = await fetch(`${API_BASE_URL}/generate/blog`, {
+  return fetchWithAuth<BlogContent>(`${API_BASE_URL}/generate/blog`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-
-  return handleResponse<BlogContent>(response);
 };
 
 export const generateAd = async (data: {
@@ -177,19 +248,13 @@ export const generateAd = async (data: {
   targetAudience: string;
   keyBenefit: string;
   tone: "direct" | "playful" | "urgent" | "professional";
+  brandId?: string;
 }) => {
-  const token = getAuthToken();
-
-  const response = await fetch(`${API_BASE_URL}/generate/ad`, {
+  return fetchWithAuth<AdContent>(`${API_BASE_URL}/generate/ad`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-
-  return handleResponse<AdContent>(response);
 };
 
 export const generateProduct = async (data: {
@@ -198,19 +263,13 @@ export const generateProduct = async (data: {
   tone: string;
   targetAudience: string;
   length: "short" | "medium" | "long";
+  brandId?: string;
 }) => {
-  const token = getAuthToken();
-
-  const response = await fetch(`${API_BASE_URL}/generate/product`, {
+  return fetchWithAuth<ProductContent>(`${API_BASE_URL}/generate/product`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-
-  return handleResponse<ProductContent>(response);
 };
 
 // ============================================
@@ -225,7 +284,6 @@ export interface ContentFilters {
 }
 
 export const getMyContent = async (filters?: ContentFilters) => {
-  const token = getAuthToken();
   const params = new URLSearchParams();
 
   if (filters?.contentType) params.append("contentType", filters.contentType);
@@ -233,57 +291,29 @@ export const getMyContent = async (filters?: ContentFilters) => {
   if (filters?.limit) params.append("limit", filters.limit.toString());
   if (filters?.offset) params.append("offset", filters.offset.toString());
 
-  const response = await fetch(`${API_BASE_URL}/content?${params.toString()}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  return handleResponse(response);
+  return fetchWithAuth(`${API_BASE_URL}/content?${params.toString()}`);
 };
 
 export const getContent = async (contentId: string) => {
-  const token = getAuthToken();
-
-  const response = await fetch(`${API_BASE_URL}/content/${contentId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  return handleResponse(response);
+  return fetchWithAuth(`${API_BASE_URL}/content/${contentId}`);
 };
 
 export const deleteContent = async (contentId: string) => {
-  const token = getAuthToken();
-
-  const response = await fetch(`${API_BASE_URL}/content/${contentId}`, {
+  return fetchWithAuth(`${API_BASE_URL}/content/${contentId}`, {
     method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
   });
-
-  return handleResponse(response);
 };
 
 export const improveContent = async (contentId: string, mode: string) => {
-  const token = getAuthToken();
-
-  const response = await fetch(`${API_BASE_URL}/content/${contentId}/improve`, {
+  return fetchWithAuth<ContentVersion>(`${API_BASE_URL}/content/${contentId}/improve`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ mode }),
   });
-
-  return handleResponse<ContentVersion>(response);
 };
 
 export const getContentVersions = async (contentId: string) => {
-  const token = getAuthToken();
-
-  const response = await fetch(`${API_BASE_URL}/content/${contentId}/versions`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  return handleResponse<ContentVersion[]>(response);
+  return fetchWithAuth<ContentVersion[]>(`${API_BASE_URL}/content/${contentId}/versions`);
 };
 
 // ============================================
@@ -291,17 +321,43 @@ export const getContentVersions = async (contentId: string) => {
 // ============================================
 
 export const getProfile = async () => {
-  const token = getAuthToken();
-  const response = await fetch(`${API_BASE_URL}/users/profile`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleResponse(response);
+  return fetchWithAuth(`${API_BASE_URL}/users/profile`);
 };
 
 export const getDashboard = async () => {
-  const token = getAuthToken();
-  const response = await fetch(`${API_BASE_URL}/dashboard`, {
-    headers: { Authorization: `Bearer ${token}` },
+  return fetchWithAuth(`${API_BASE_URL}/dashboard`);
+};
+
+// ============================================
+// BRAND MANAGEMENT
+// ============================================
+
+export const getBrands = async () => {
+  return fetchWithAuth<BrandProfile[]>(`${API_BASE_URL}/brands`);
+};
+
+export const getBrand = async (id: string) => {
+  return fetchWithAuth<BrandProfile>(`${API_BASE_URL}/brands/${id}`);
+};
+
+export const createBrand = async (data: Omit<BrandProfile, "id" | "createdAt" | "updatedAt">) => {
+  return fetchWithAuth<BrandProfile>(`${API_BASE_URL}/brands`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
   });
-  return handleResponse(response);
+};
+
+export const updateBrand = async (id: string, data: Partial<BrandProfile>) => {
+  return fetchWithAuth<BrandProfile>(`${API_BASE_URL}/brands/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+};
+
+export const deleteBrand = async (id: string) => {
+  return fetchWithAuth(`${API_BASE_URL}/brands/${id}`, {
+    method: "DELETE",
+  });
 };

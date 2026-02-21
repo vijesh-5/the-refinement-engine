@@ -99,6 +99,11 @@ export class VersionService {
       ${currentContent}
       ---
       
+      FORMATTING RULES:
+      - Use clean Markdown formatting (## for headings, **bold**, *italic*, - for bullet lists).
+      - Do NOT output HTML tags, CSS, or any code. No <html>, <head>, <style>, <div>, or similar tags.
+      - Return only the improved content as readable, copyable text.
+      
       Return ONLY the improved content text. Do not include any explanations or meta-talk.
     `;
   }

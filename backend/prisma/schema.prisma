@@ -20,9 +20,30 @@ model User {
 
   contents      Content[]
   refreshTokens RefreshToken[]
+  brandProfiles BrandProfile[]
 
   @@index([email])
   @@map("users")
+}
+
+model BrandProfile {
+  id              String   @id @default(uuid())
+  name            String
+  industry        String?
+  tone            String   @default("Professional")
+  targetAudience  String?  @db.Text
+  brandVoice      String?  @db.Text
+  bannedWords     String[] @default([])
+  keySellingPoints String[] @default([])
+  userId          String
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("brand_profiles")
 }
 
 enum UserPlan {

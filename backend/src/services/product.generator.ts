@@ -8,6 +8,7 @@ interface ProductInput {
   tone: string;
   targetAudience: string;
   length: "short" | "medium" | "long";
+  brandId?: string;
 }
 
 interface ProductOutput {
@@ -30,9 +31,25 @@ export async function generateProductDescription(
     long: "200-250 words for short description, 700-1000 for long",
   };
 
+  let brandContext = "";
+  if (input.brandId) {
+    const brand = await prisma.brandProfile.findUnique({
+      where: { id: input.brandId, userId },
+    });
+    if (brand) {
+      brandContext = `
+BRAND IDENTITY: ${brand.name}
+BRAND TONE: ${brand.tone}
+BRAND VOICE: ${brand.brandVoice || "N/A"}
+TARGET AUDIENCE: ${brand.targetAudience || input.targetAudience}
+BANNED WORDS: ${brand.bannedWords.join(", ") || "None"}
+`;
+    }
+  }
+
   // Build comprehensive prompt using ALL input fields
   const prompt = `You are an expert product copywriter specializing in e-commerce. Create a compelling product description with these specifications:
-
+${brandContext}
 PRODUCT NAME: ${input.productName}
 FEATURES/DETAILS: ${input.features}
 TARGET AUDIENCE: ${input.targetAudience}

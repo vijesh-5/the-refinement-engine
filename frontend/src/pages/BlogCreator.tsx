@@ -2,8 +2,10 @@ import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useMutation } from "@tanstack/react-query";
-import { generateBlog, improveContent, getContentVersions, BlogContent, ContentVersion } from "@/lib/api";
+import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
+import { stripMarkdown } from "@/lib/markdown";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { generateBlog, improveContent, getContentVersions, getBrands, BlogContent, ContentVersion, BrandProfile } from "@/lib/api";
 import { toast } from "sonner";
 import { 
   ChevronDown, 
@@ -24,8 +26,11 @@ import {
   TrendingUp,
   Zap,
   ShieldCheck,
-  Star
+  Star,
+  Briefcase
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Link } from "react-router-dom";
 
 interface CollapsibleSectionProps {
   title: string;
@@ -73,8 +78,14 @@ export default function BlogCreator() {
   const [tone, setTone] = useState("Professional");
   const [generatedContent, setGeneratedContent] = useState("");
   const [currentContentId, setCurrentContentId] = useState<string | null>(null);
+  const [selectedBrandId, setSelectedBrandId] = useState<string>("none");
   const [versions, setVersions] = useState<ContentVersion[]>([]);
   const [copied, setCopied] = useState(false);
+
+  const { data: brands } = useQuery({
+    queryKey: ["brands"],
+    queryFn: getBrands,
+  });
 
   const mutation = useMutation({
     mutationFn: (data: {
@@ -84,14 +95,14 @@ export default function BlogCreator() {
       keywords?: string[];
       length: "short" | "medium" | "long";
       intent?: string;
+      brandId?: string;
     }) => generateBlog(data),
     onSuccess: (result) => {
       if (result.success && result.data) {
         setGeneratedContent(result.data.content);
-        setCurrentContentId(result.data.id || null);
-        toast.success("Blog draft generated successfully!");
         if (result.data.id) {
           fetchVersions(result.data.id);
+          setCurrentContentId(result.data.id);
         }
       }
     },
@@ -157,12 +168,13 @@ export default function BlogCreator() {
       tone,
       keywords: keyword ? [keyword] : [],
       length: lengthMap[wordCount] || "medium",
-      intent: angle
+      intent: angle,
+      brandId: selectedBrandId === "none" ? undefined : selectedBrandId
     });
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(generatedContent);
+    navigator.clipboard.writeText(stripMarkdown(generatedContent));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -197,6 +209,38 @@ export default function BlogCreator() {
 
           {/* Sections */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
+            <CollapsibleSection
+              title="Brand Identity"
+              icon={<Briefcase className="w-4 h-4 text-purple-400" />}
+              isOpen={openSection === "brand"}
+              onToggle={() => setOpenSection(openSection === "brand" ? "" : "brand")}
+              badge={selectedBrandId !== "none" ? "Active" : undefined}
+            >
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-foreground-muted block mb-2">
+                    Select Brand Memory
+                  </label>
+                  <Select value={selectedBrandId} onValueChange={setSelectedBrandId}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="No brand selected" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Generic / No Brand</SelectItem>
+                      {brands?.data?.map((brand: BrandProfile) => (
+                        <SelectItem key={brand.id} value={brand.id}>
+                          {brand.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-foreground-subtle mt-2">
+                    Injects voice, audience, and banned words. <Link to="/app/brands" className="text-primary hover:underline">Manage brands</Link>
+                  </p>
+                </div>
+              </div>
+            </CollapsibleSection>
+
             <CollapsibleSection
               title="Idea & Angle"
               icon={<Sparkles className="w-4 h-4 text-primary" />}
@@ -450,9 +494,7 @@ export default function BlogCreator() {
             {generatedContent ? (
               <div className="max-w-3xl mx-auto p-8 md:p-12">
                 <div className="prose prose-invert prose-headings:text-foreground prose-p:text-foreground-muted prose-strong:text-foreground prose-blockquote:border-primary prose-blockquote:text-foreground-muted max-w-none">
-                  <div className="whitespace-pre-wrap text-foreground leading-relaxed">
-                    {generatedContent}
-                  </div>
+                  <MarkdownRenderer content={generatedContent} />
                 </div>
               </div>
             ) : (
