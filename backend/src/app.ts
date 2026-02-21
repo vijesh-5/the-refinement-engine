@@ -10,6 +10,7 @@ import dashboardRoutes from "./routes/dashboard.routes";
 import userRoutes from "./routes/user.routes";
 import generateRoutes from "./routes/generate.routes";
 import brandRoutes from "./routes/brand.routes";
+import competitorRoutes from "./routes/competitor.routes";
 
 export function createApp(): Application {
   const app = express();
@@ -38,6 +39,7 @@ export function createApp(): Application {
         content: "/api/content/*",
         templates: "/api/templates/*",
         brands: "/api/brands/*",
+        competitors: "/api/competitors/*",
       },
     });
   });
@@ -50,6 +52,7 @@ export function createApp(): Application {
   app.use("/api/dashboard", dashboardRoutes);
   app.use("/api/users", userRoutes);
   app.use("/api/brands", brandRoutes);
+  app.use("/api/competitors", competitorRoutes);
 
   // Error handling
   app.use(notFoundHandler);

@@ -1,6 +1,7 @@
 import { geminiService } from "./gemini.service";
 import { prisma } from "../config/database";
 import { scoringService, ContentScore } from "./scoring.service";
+import { competitorService } from "./competitor.service";
 
 interface AdInput {
   platform: "Facebook" | "Instagram" | "Google" | "LinkedIn";
@@ -70,9 +71,16 @@ BANNED WORDS: ${brand.brandVoice ? brand.bannedWords.join(", ") : "None"}
     }
   }
 
+  // Fetch competitor context if brand is selected
+  let competitorDiffContext = "";
+  if (input.brandId) {
+    competitorDiffContext = await competitorService.getCompetitorContext(input.brandId);
+  }
+
   // Build comprehensive prompt using ALL input fields
   const prompt = `You are an expert advertising copywriter. Create ${specs.variants} high-converting ad copy variants for ${input.platform} with these specifications:
 ${brandContext}
+${competitorDiffContext}
 PRODUCT/SERVICE: ${input.product}
 TARGET AUDIENCE: ${input.targetAudience}
 KEY BENEFIT: ${input.keyBenefit}

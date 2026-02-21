@@ -1,6 +1,7 @@
 import { geminiService } from "./gemini.service";
 import { prisma } from "../config/database";
 import { scoringService, ContentScore } from "./scoring.service";
+import { competitorService } from "./competitor.service";
 
 interface ProductInput {
   productName: string;
@@ -47,9 +48,16 @@ BANNED WORDS: ${brand.bannedWords.join(", ") || "None"}
     }
   }
 
+  // Fetch competitor context if brand is selected
+  let competitorDiffContext = "";
+  if (input.brandId) {
+    competitorDiffContext = await competitorService.getCompetitorContext(input.brandId);
+  }
+
   // Build comprehensive prompt using ALL input fields
   const prompt = `You are an expert product copywriter specializing in e-commerce. Create a compelling product description with these specifications:
 ${brandContext}
+${competitorDiffContext}
 PRODUCT NAME: ${input.productName}
 FEATURES/DETAILS: ${input.features}
 TARGET AUDIENCE: ${input.targetAudience}

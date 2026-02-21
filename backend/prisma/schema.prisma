@@ -41,9 +41,30 @@ model BrandProfile {
   updatedAt       DateTime @updatedAt
 
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  competitorInsights CompetitorInsight[]
 
   @@index([userId])
   @@map("brand_profiles")
+}
+
+model CompetitorInsight {
+  id             String   @id @default(uuid())
+  brandProfileId String
+  url            String
+  domain         String
+  title          String?
+  keyMessages    String[] @default([])
+  toneAnalysis   String?  @db.Text
+  strengthAreas  String[] @default([])
+  weaknessGaps   String[] @default([])
+  rawSummary     String?  @db.Text
+  lastAnalyzed   DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  brandProfile   BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+
+  @@index([brandProfileId])
+  @@map("competitor_insights")
 }
 
 enum UserPlan {

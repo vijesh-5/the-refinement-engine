@@ -38,9 +38,9 @@ This document tracks the evolution of Artifex from a visual mockup to a Content 
 - [ ] Build UI for users to define Tone, Persona, and Positioning.
 - [ ] Inject brand context into LLM prompts automatically.
 
-### Phase 6 — Market Awareness
-- [ ] Implement basic competitor URL scraping.
-- [ ] Instruct AI to differentiate content based on messaging gaps.
+### Phase 6 — Market Awareness ✅
+- [x] Implement basic competitor URL analysis.
+- [x] Instruct AI to differentiate content based on messaging gaps.
 
 ### Phase 7 & 8 — Prediction & Insights
 - [ ] Lightweight heuristic performance prediction.

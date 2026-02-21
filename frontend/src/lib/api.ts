@@ -361,3 +361,40 @@ export const deleteBrand = async (id: string) => {
     method: "DELETE",
   });
 };
+
+// ============================================
+// COMPETITOR ANALYSIS
+// ============================================
+
+export interface CompetitorInsight {
+  id: string;
+  brandProfileId: string;
+  url: string;
+  domain: string;
+  title: string | null;
+  keyMessages: string[];
+  toneAnalysis: string | null;
+  strengthAreas: string[];
+  weaknessGaps: string[];
+  rawSummary: string | null;
+  lastAnalyzed: string;
+  createdAt: string;
+}
+
+export const analyzeCompetitor = async (data: { url: string; brandProfileId: string }) => {
+  return fetchWithAuth<CompetitorInsight>(`${API_BASE_URL}/competitors/analyze`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+};
+
+export const getCompetitors = async (brandId: string) => {
+  return fetchWithAuth<CompetitorInsight[]>(`${API_BASE_URL}/competitors/brand/${brandId}`);
+};
+
+export const deleteCompetitor = async (id: string) => {
+  return fetchWithAuth(`${API_BASE_URL}/competitors/${id}`, {
+    method: "DELETE",
+  });
+};
