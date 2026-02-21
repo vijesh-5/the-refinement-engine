@@ -65,11 +65,14 @@ const recentContent = [
 ];
 
 export default function Dashboard() {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const userName = user.firstName || "there";
+
   return (
     <AppLayout>
       {/* Header */}
       <div className="page-header">
-        <h1 className="page-title">Welcome back</h1>
+        <h1 className="page-title">Welcome back, {userName}</h1>
         <p className="page-description">What would you like to create today?</p>
       </div>
 

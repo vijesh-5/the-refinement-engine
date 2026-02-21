@@ -3,6 +3,9 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useMutation } from "@tanstack/react-query";
+import { generateProduct } from "@/lib/api";
+import { toast } from "sonner";
 import { 
   Sparkles,
   Package,
@@ -28,19 +31,26 @@ interface Feature {
 export default function ProductDescriptions() {
   const [productName, setProductName] = useState("");
   const [category, setCategory] = useState("Fashion");
+  const [audience, setAudience] = useState("");
   const [features, setFeatures] = useState<Feature[]>([
     { id: "1", feature: "", benefit: "" },
   ]);
   const [tone, setTone] = useState("Premium");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedContent, setGeneratedContent] = useState<{
-    headline: string;
-    bullets: string[];
-    shortDesc: string;
-    longDesc: string;
-    conversionScore: number;
-  } | null>(null);
+  const [generatedContent, setGeneratedContent] = useState<any>(null);
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: (data: any) => generateProduct(data),
+    onSuccess: (result) => {
+      if (result.success && result.data) {
+        setGeneratedContent(result.data);
+        toast.success("Product description generated successfully!");
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to generate product description");
+    }
+  });
 
   const addFeature = () => {
     setFeatures([...features, { id: Date.now().toString(), feature: "", benefit: "" }]);
@@ -57,23 +67,23 @@ export default function ProductDescriptions() {
   };
 
   const handleGenerate = () => {
-    setIsGenerating(true);
-    setTimeout(() => {
-      setGeneratedContent({
-        headline: "Premium Leather Messenger Bag — Crafted for the Modern Professional",
-        bullets: [
-          "Full-grain Italian leather that develops a rich patina over time",
-          "Padded 15\" laptop compartment with secure magnetic closure",
-          "Adjustable strap for comfortable crossbody or shoulder wear",
-          "Organized interior with 6 pockets for all your essentials",
-          "Handcrafted by artisans with 30+ years of experience",
-        ],
-        shortDesc: "Elevate your everyday carry with our handcrafted leather messenger bag. Made from premium full-grain Italian leather, it's designed for professionals who value quality, durability, and timeless style.",
-        longDesc: "The Executive Messenger is more than a bag—it's a statement. Crafted from the finest full-grain Italian leather, each piece is meticulously handmade by skilled artisans who have perfected their craft over three decades.\n\nThe design balances form and function perfectly. A dedicated padded compartment protects your laptop up to 15\", while six interior pockets keep your essentials organized. The adjustable strap allows for comfortable crossbody or shoulder carry throughout your day.\n\nWhat sets this bag apart is the leather itself. Full-grain leather isn't just more durable—it tells a story. Over time, it develops a unique patina that reflects your journey, making each bag truly one-of-a-kind.\n\nWhether you're heading to the office, catching a flight, or meeting clients, the Executive Messenger ensures you arrive with confidence.",
-        conversionScore: 94,
-      });
-      setIsGenerating(false);
-    }, 2000);
+    if (!productName || !audience || features.every(f => !f.feature)) {
+      toast.error("Product name, audience, and at least one feature are required");
+      return;
+    }
+
+    const featuresString = features
+      .filter(f => f.feature)
+      .map(f => `${f.feature}${f.benefit ? ` (${f.benefit})` : ""}`)
+      .join(", ");
+
+    mutation.mutate({
+      productName,
+      targetAudience: audience,
+      features: featuresString,
+      tone,
+      length: "medium" // Default for now
+    });
   };
 
   const handleCopy = (section: string, text: string) => {
@@ -140,6 +150,18 @@ export default function ProductDescriptions() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Target Audience */}
+            <div>
+              <label className="text-xs font-semibold text-foreground-muted uppercase tracking-wide block mb-2">
+                Target Audience
+              </label>
+              <Input 
+                placeholder="e.g., Luxury travelers, Busy professionals"
+                value={audience}
+                onChange={(e) => setAudience(e.target.value)}
+              />
             </div>
 
             {/* Feature → Benefit Blocks */}
@@ -218,9 +240,9 @@ export default function ProductDescriptions() {
               className="w-full bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400" 
               size="lg"
               onClick={handleGenerate}
-              disabled={isGenerating}
+              disabled={mutation.isPending}
             >
-              {isGenerating ? (
+              {mutation.isPending ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Generating...
@@ -250,19 +272,27 @@ export default function ProductDescriptions() {
                       <div>
                         <div className="text-sm text-foreground-muted mb-1">Conversion Confidence</div>
                         <div className="flex items-baseline gap-2">
-                          <span className="text-4xl font-bold text-green-400">{generatedContent.conversionScore}</span>
+                          <span className="text-4xl font-bold text-green-400">{generatedContent.score?.total || 0}</span>
                           <span className="text-green-400/60">/100</span>
                         </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-4 gap-6">
-                      {conversionMetrics.map((metric, i) => (
-                        <div key={i} className="text-center">
-                          <metric.icon className="w-4 h-4 text-foreground-subtle mx-auto mb-1" />
-                          <div className="text-lg font-semibold text-foreground">{metric.value}</div>
-                          <div className="text-xs text-foreground-subtle">{metric.label}</div>
-                        </div>
-                      ))}
+                    <div className="grid grid-cols-3 gap-6">
+                      <div className="text-center">
+                        <TrendingUp className="w-4 h-4 text-foreground-subtle mx-auto mb-1" />
+                        <div className="text-lg font-semibold text-foreground">{generatedContent.score?.readability || 0}</div>
+                        <div className="text-xs text-foreground-subtle">Readability</div>
+                      </div>
+                      <div className="text-center">
+                        <Target className="w-4 h-4 text-foreground-subtle mx-auto mb-1" />
+                        <div className="text-lg font-semibold text-foreground">{generatedContent.score?.seo || 0}</div>
+                        <div className="text-xs text-foreground-subtle">SEO</div>
+                      </div>
+                      <div className="text-center">
+                        <Zap className="w-4 h-4 text-foreground-subtle mx-auto mb-1" />
+                        <div className="text-lg font-semibold text-foreground">{generatedContent.score?.engagement || 0}</div>
+                        <div className="text-xs text-foreground-subtle">Engagement</div>
+                      </div>
                     </div>
                   </div>
                 </CardContent>

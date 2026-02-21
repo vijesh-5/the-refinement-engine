@@ -2,6 +2,9 @@ import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useMutation } from "@tanstack/react-query";
+import { generateBlog } from "@/lib/api";
+import { toast } from "sonner";
 import { 
   ChevronDown, 
   ChevronUp,
@@ -58,51 +61,48 @@ function CollapsibleSection({ title, icon, isOpen, onToggle, children, badge }: 
 export default function BlogCreator() {
   const [openSection, setOpenSection] = useState<string>("idea");
   const [topic, setTopic] = useState("");
+  const [audience, setAudience] = useState("");
   const [angle, setAngle] = useState("");
   const [keyword, setKeyword] = useState("");
   const [wordCount, setWordCount] = useState("1500");
   const [tone, setTone] = useState("Professional");
-  const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState("");
   const [copied, setCopied] = useState(false);
 
+  const mutation = useMutation({
+    mutationFn: (data: any) => generateBlog(data),
+    onSuccess: (result) => {
+      if (result.success && result.data) {
+        setGeneratedContent(result.data.content);
+        toast.success("Blog draft generated successfully!");
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to generate blog draft");
+    }
+  });
+
   const handleGenerate = () => {
-    setIsGenerating(true);
-    setTimeout(() => {
-      setGeneratedContent(`# ${topic || "10 Ways to Improve Your Landing Page Conversions"}
+    if (!topic || !audience) {
+      toast.error("Topic and Audience are required");
+      return;
+    }
 
-A landing page is often your first impression—and your best chance to convert visitors into customers. But most landing pages fail to deliver because they focus on features rather than outcomes.
+    const lengthMap: Record<string, "short" | "medium" | "long"> = {
+      "1000": "short",
+      "1500": "medium",
+      "2000": "medium",
+      "3000": "long"
+    };
 
-## Why Most Landing Pages Underperform
-
-The average landing page conversion rate is just 2.35%. That means for every 100 visitors, only 2-3 take action. The top 25% of landing pages convert at 5.31% or higher.
-
-What separates high-converting pages from the rest? It comes down to three core principles:
-
-### 1. Clarity Over Cleverness
-
-Your headline has less than 5 seconds to capture attention. Don't be clever—be clear. Tell visitors exactly what they'll get and why it matters.
-
-**Before:** "Revolutionize your workflow with AI-powered solutions"
-**After:** "Write landing page copy 10x faster with AI"
-
-### 2. Social Proof That Converts
-
-Generic testimonials don't move the needle. Specific, outcome-focused testimonials do. Include numbers, results, and real names whenever possible.
-
-> "Artifex helped us increase our conversion rate by 47% in just 3 weeks." — Sarah Chen, Founder at Clarity Labs
-
-### 3. One Clear Call-to-Action
-
-Every landing page should have a single, unmistakable next step. Multiple CTAs create confusion and reduce conversions.
-
-## The Bottom Line
-
-Great landing pages aren't about fancy design or clever copy. They're about understanding your visitor's problem and presenting a clear path to the solution.
-
-Start with clarity. Build with empathy. Optimize with data.`);
-      setIsGenerating(false);
-    }, 2500);
+    mutation.mutate({
+      topic,
+      audience,
+      tone,
+      keywords: keyword ? [keyword] : [],
+      length: lengthMap[wordCount] || "medium",
+      intent: angle
+    });
   };
 
   const handleCopy = () => {
@@ -111,10 +111,14 @@ Start with clarity. Build with empathy. Optimize with data.`);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const metrics = [
-    { label: "SEO Score", value: 92, icon: Target },
-    { label: "Readability", value: 88, icon: AlignLeft },
-    { label: "Engagement", value: 95, icon: Sparkles },
+  const metrics = mutation.data?.data?.score ? [
+    { label: "SEO Score", value: mutation.data.data.score.seo, icon: Target },
+    { label: "Readability", value: mutation.data.data.score.readability, icon: AlignLeft },
+    { label: "Engagement", value: mutation.data.data.score.engagement, icon: Sparkles },
+  ] : [
+    { label: "SEO Score", value: 0, icon: Target },
+    { label: "Readability", value: 0, icon: AlignLeft },
+    { label: "Engagement", value: 0, icon: Sparkles },
   ];
 
   return (
@@ -156,11 +160,21 @@ Start with clarity. Build with empathy. Optimize with data.`);
                 </div>
                 <div>
                   <label className="text-xs font-medium text-foreground-muted block mb-2">
-                    What's your unique angle?
+                    Who is your audience?
+                  </label>
+                  <Input 
+                    placeholder="e.g., SaaS Founders, Marketers" 
+                    value={audience}
+                    onChange={(e) => setAudience(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-foreground-muted block mb-2">
+                    What's your unique angle? (Optional)
                   </label>
                   <textarea 
                     className="w-full h-20 px-3 py-2 text-sm bg-input border border-border-subtle rounded-lg resize-none focus:outline-none focus:border-primary/50 transition-colors"
-                    placeholder="e.g., A data-driven guide for SaaS founders..."
+                    placeholder="e.g., A data-driven guide..."
                     value={angle}
                     onChange={(e) => setAngle(e.target.value)}
                   />
@@ -250,9 +264,9 @@ Start with clarity. Build with empathy. Optimize with data.`);
               className="w-full" 
               size="lg"
               onClick={handleGenerate}
-              disabled={isGenerating}
+              disabled={mutation.isPending}
             >
-              {isGenerating ? (
+              {mutation.isPending ? (
                 <>
                   <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                   Writing...

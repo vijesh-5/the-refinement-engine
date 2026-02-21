@@ -1,5 +1,6 @@
 import { geminiService } from "./gemini.service";
 import { prisma } from "../config/database";
+import { scoringService, ContentScore } from "./scoring.service";
 
 interface AdInput {
   platform: "Facebook" | "Instagram" | "Google" | "LinkedIn";
@@ -18,6 +19,7 @@ interface AdVariant {
 interface AdOutput {
   platform: string;
   variants: AdVariant[];
+  score?: ContentScore;
 }
 
 export async function generateAd(
@@ -100,10 +102,10 @@ IMPORTANT: Return ONLY valid JSON, no additional text or markdown formatting.`;
   const response = await geminiService.generateContent(prompt);
   const output = geminiService.parseJsonResponse<AdOutput>(response);
 
-  // Validate output structure
-  if (!output.variants || output.variants.length === 0) {
-    throw new Error("Invalid ad output structure from AI");
-  }
+  // Calculate score for the first variant (or combine all)
+  const mainContent = `${output.variants[0].headline} ${output.variants[0].primaryText}`;
+  const score = await scoringService.scoreContent(mainContent, "ad");
+  output.score = score;
 
   // Save to database
   await prisma.content.create({
@@ -113,8 +115,8 @@ IMPORTANT: Return ONLY valid JSON, no additional text or markdown formatting.`;
       title: `${input.platform} Ad - ${input.product}`,
       body: JSON.stringify(output.variants),
       status: "COMPLETE",
-      inputData: input,
-      generatedOutput: output,
+      inputData: input as any,
+      generatedOutput: output as any,
     },
   });
 

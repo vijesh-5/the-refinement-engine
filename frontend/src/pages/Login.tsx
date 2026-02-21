@@ -3,6 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PenLine, ArrowRight, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { login } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -10,10 +13,28 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
+  const mutation = useMutation({
+    mutationFn: (data: any) => login(data),
+    onSuccess: (result) => {
+      if (result.success) {
+        toast.success("Welcome back!");
+        navigate("/app");
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Invalid email or password");
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you'd validate and authenticate here
-    navigate("/app");
+    
+    if (!email || !password) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    mutation.mutate({ email, password });
   };
 
   return (
@@ -84,9 +105,14 @@ export default function Login() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full h-12 text-base" size="lg">
-              Sign in
-              <ArrowRight className="w-4 h-4" />
+            <Button 
+              type="submit" 
+              className="w-full h-12 text-base" 
+              size="lg"
+              disabled={mutation.isPending}
+            >
+              {mutation.isPending ? "Signing in..." : "Sign in"}
+              {!mutation.isPending && <ArrowRight className="w-4 h-4" />}
             </Button>
           </form>
 

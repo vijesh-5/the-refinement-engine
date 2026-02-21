@@ -1,5 +1,6 @@
 import { geminiService } from "./gemini.service";
 import { prisma } from "../config/database";
+import { scoringService, ContentScore } from "./scoring.service";
 
 interface ProductInput {
   productName: string;
@@ -14,6 +15,7 @@ interface ProductOutput {
   shortDescription: string;
   bulletFeatures: string[];
   longDescription: string;
+  score?: ContentScore;
 }
 
 export async function generateProductDescription(
@@ -79,6 +81,10 @@ IMPORTANT: Return ONLY valid JSON, no additional text or markdown formatting.`;
     throw new Error("Invalid product description output structure from AI");
   }
 
+  // Calculate score
+  const score = await scoringService.scoreContent(output.longDescription, "product");
+  output.score = score;
+
   // Save to database
   await prisma.content.create({
     data: {
@@ -87,8 +93,8 @@ IMPORTANT: Return ONLY valid JSON, no additional text or markdown formatting.`;
       title: input.productName,
       body: output.longDescription,
       status: "COMPLETE",
-      inputData: input,
-      generatedOutput: output,
+      inputData: input as any,
+      generatedOutput: output as any,
     },
   });
 
