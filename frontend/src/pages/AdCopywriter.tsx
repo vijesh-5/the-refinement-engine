@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMutation } from "@tanstack/react-query";
-import { generateAd } from "@/lib/api";
+import { generateAd, improveContent, getContentVersions, AdContent, AdVariant, ContentVersion } from "@/lib/api";
 import { toast } from "sonner";
 import { 
   Zap,
@@ -17,7 +17,13 @@ import {
   MousePointer,
   Flame,
   ThumbsUp,
-  AlertTriangle
+  AlertTriangle,
+  History as HistoryIcon,
+  Star,
+  ShieldCheck,
+  Wand2,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 
 // Platform icons as simple components
@@ -61,21 +67,82 @@ export default function AdCopywriter() {
   const [audience, setAudience] = useState("");
   const [benefit, setBenefit] = useState("");
   const [selectedTone, setSelectedTone] = useState("Professional");
-  const [variations, setVariations] = useState<any[]>([]);
+  const [variations, setVariations] = useState<AdVariant[]>([]);
+  const [currentContentId, setCurrentContentId] = useState<string | null>(null);
+  const [versions, setVersions] = useState<ContentVersion[]>([]);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [openSection, setOpenSection] = useState<string>("platform");
 
   const mutation = useMutation({
-    mutationFn: (data: any) => generateAd(data),
+    mutationFn: (data: {
+      platform: "Facebook" | "Instagram" | "Google" | "LinkedIn";
+      product: string;
+      targetAudience: string;
+      keyBenefit: string;
+      tone: "direct" | "playful" | "urgent" | "professional";
+    }) => generateAd(data),
     onSuccess: (result) => {
       if (result.success && result.data) {
         setVariations(result.data.variants || []);
+        setCurrentContentId(result.data.id || null);
         toast.success("Ad variations generated successfully!");
+        if (result.data.id) {
+          fetchVersions(result.data.id);
+        }
       }
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || "Failed to generate ad variations");
     }
   });
+
+  const improveMutation = useMutation({
+    mutationFn: ({ id, mode }: { id: string; mode: string }) => improveContent(id, mode),
+    onSuccess: (result) => {
+      if (result.success && result.data) {
+        try {
+          const parsedVariants = JSON.parse(result.data.body);
+          setVariations(parsedVariants);
+          toast.success(`Ads improved! (Version ${result.data.versionNumber})`);
+          fetchVersions(currentContentId!);
+        } catch (e) {
+          console.error("Failed to parse improved ad variants", e);
+          toast.error("Improved content format error");
+        }
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to improve content");
+    }
+  });
+
+  const fetchVersions = async (id: string) => {
+    try {
+      const result = await getContentVersions(id);
+      if (result.success) {
+        setVersions(result.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch versions", error);
+    }
+  };
+
+  const handleImprove = (mode: string) => {
+    if (!currentContentId) {
+      toast.error("Generate variations first before improving");
+      return;
+    }
+    improveMutation.mutate({ id: currentContentId, mode });
+  };
+
+  const handleSwitchVersion = (version: ContentVersion) => {
+    try {
+      setVariations(JSON.parse(version.body));
+      toast.info(`Switched to Version ${version.versionNumber}`);
+    } catch (e) {
+      toast.error("Failed to load this version");
+    }
+  };
 
   const handleGenerate = () => {
     if (!product || !audience || !benefit) {
@@ -95,7 +162,7 @@ export default function AdCopywriter() {
       product,
       targetAudience: audience,
       keyBenefit: benefit,
-      tone: selectedTone.toLowerCase() as any
+      tone: selectedTone.toLowerCase() as "direct" | "playful" | "urgent" | "professional"
     });
   };
 
@@ -106,8 +173,8 @@ export default function AdCopywriter() {
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return "text-success";
-    if (score >= 80) return "text-warning";
+    if (score >= 85) return "text-success";
+    if (score >= 70) return "text-warning";
     return "text-destructive";
   };
 
@@ -199,27 +266,120 @@ export default function AdCopywriter() {
               </div>
             </div>
 
-            {/* Tone */}
-            <div>
-              <label className="text-xs font-semibold text-foreground-muted uppercase tracking-wide block mb-3">
-                Tone
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {["Direct", "Playful", "Urgent", "Professional"].map((tone) => (
-                  <button
-                    key={tone}
-                    onClick={() => setSelectedTone(tone)}
-                    className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
-                      selectedTone === tone
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border-subtle hover:border-primary/50 hover:bg-primary/5"
-                    }`}
-                  >
-                    {tone}
-                  </button>
-                ))}
-              </div>
+            {/* Voice & Tone wrapped in Collapsible */}
+            <div className="border border-border-subtle rounded-xl overflow-hidden bg-background-surface/50">
+              <button 
+                onClick={() => setOpenSection(openSection === "voice" ? "" : "voice")}
+                className="w-full flex items-center justify-between p-4 hover:bg-background-hover transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <Flame className="w-4 h-4 text-orange-400" />
+                  <span className="font-medium text-sm">Voice & Tone</span>
+                </div>
+                {openSection === "voice" ? <ChevronUp className="w-4 h-4 text-foreground-muted" /> : <ChevronDown className="w-4 h-4 text-foreground-muted" />}
+              </button>
+              {openSection === "voice" && (
+                <div className="px-4 pb-4">
+                  <div className="flex flex-wrap gap-2">
+                    {["Direct", "Playful", "Urgent", "Professional"].map((tone) => (
+                      <button
+                        key={tone}
+                        onClick={() => setSelectedTone(tone)}
+                        className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
+                          selectedTone === tone
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border-subtle hover:border-primary/50 hover:bg-primary/5"
+                        }`}
+                      >
+                        {tone}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+
+            {variations.length > 0 && (
+              <>
+                <div className="border border-border-subtle rounded-xl overflow-hidden bg-background-surface/50">
+                  <button 
+                    onClick={() => setOpenSection(openSection === "refine" ? "" : "refine")}
+                    className="w-full flex items-center justify-between p-4 hover:bg-background-hover transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Wand2 className="w-4 h-4 text-purple-400" />
+                      <span className="font-medium text-sm">Performance Evolution</span>
+                    </div>
+                    {openSection === "refine" ? <ChevronUp className="w-4 h-4 text-foreground-muted" /> : <ChevronDown className="w-4 h-4 text-foreground-muted" />}
+                  </button>
+                  {openSection === "refine" && (
+                    <div className="px-4 pb-4 space-y-3">
+                      <div className="grid grid-cols-1 gap-2">
+                        {[
+                          { id: "seo", label: "SEO Optimized", icon: TrendingUp, color: "text-blue-400" },
+                          { id: "conversion", label: "Max Conversion", icon: Zap, color: "text-yellow-400" },
+                          { id: "clarity", label: "Better Clarity", icon: ShieldCheck, color: "text-green-400" },
+                          { id: "luxury", label: "Luxury Appeal", icon: Star, color: "text-purple-400" },
+                        ].map((mode) => (
+                          <button 
+                            key={mode.id}
+                            onClick={() => handleImprove(mode.id)}
+                            disabled={improveMutation.isPending}
+                            className="flex items-center gap-3 w-full p-2.5 text-left text-sm rounded-lg border border-border-subtle bg-background hover:bg-background-hover hover:border-primary/30 transition-all group disabled:opacity-50"
+                          >
+                            <mode.icon className={`w-4 h-4 ${mode.color}`} />
+                            <span className="flex-1 font-medium">{mode.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border border-border-subtle rounded-xl overflow-hidden bg-background-surface/50">
+                  <button 
+                    onClick={() => setOpenSection(openSection === "history" ? "" : "history")}
+                    className="w-full flex items-center justify-between p-4 hover:bg-background-hover transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <HistoryIcon className="w-4 h-4 text-orange-400" />
+                      <span className="font-medium text-sm">History</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-400/10 text-orange-400">
+                        {versions.length}
+                      </span>
+                    </div>
+                    {openSection === "history" ? <ChevronUp className="w-4 h-4 text-foreground-muted" /> : <ChevronDown className="w-4 h-4 text-foreground-muted" />}
+                  </button>
+                  {openSection === "history" && (
+                    <div className="px-4 pb-4 space-y-2 max-h-60 overflow-y-auto scrollbar-thin">
+                      {versions.map((v) => (
+                        <button 
+                          key={v.id}
+                          onClick={() => handleSwitchVersion(v)}
+                          className={`w-full flex flex-col gap-1 p-3 text-left rounded-lg border transition-all ${
+                            JSON.stringify(variations) === v.body
+                              ? "border-primary bg-primary/5"
+                              : "border-border-subtle hover:border-primary/30 hover:bg-background-hover"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-foreground">Version {v.versionNumber}</span>
+                            <span className="text-[10px] text-foreground-muted">
+                              {new Date(v.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded w-fit ${
+                            v.improvementType === 'original' ? 'bg-background-surface text-foreground-muted' : 'bg-primary/10 text-primary'
+                          }`}>
+                            {v.improvementType || 'Modified'}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Generate Button */}
@@ -300,7 +460,7 @@ export default function AdCopywriter() {
                               <Button
                                 variant="ghost"
                                 size="icon-sm"
-                                onClick={() => handleCopy(index, `${variation.hook}\n\n${variation.body}\n\n${variation.cta}`)}
+                                onClick={() => handleCopy(index, `${variation.headline}\n\n${variation.primaryText}\n\n${variation.cta}`)}
                                 className="opacity-0 group-hover:opacity-100 transition-opacity"
                               >
                                 {copiedIndex === index ? (
@@ -311,32 +471,32 @@ export default function AdCopywriter() {
                               </Button>
                             </div>
 
-                            {/* Hook */}
+                            {/* Headline */}
                             <div className="mb-4">
                               <div className="flex items-center gap-2 mb-1">
                                 <Eye className="w-3 h-3 text-foreground-subtle" />
-                                <span className="text-xs text-foreground-subtle uppercase tracking-wide">Hook</span>
+                                <span className="text-xs text-foreground-subtle uppercase tracking-wide">Headline</span>
                                 {score && (
                                   <span className={`text-xs font-medium ${getScoreColor(score.engagement)}`}>
                                     {score.engagement}
                                   </span>
                                 )}
                               </div>
-                              <p className="text-lg font-semibold">{variation.hook}</p>
+                              <p className="text-lg font-semibold">{variation.headline}</p>
                             </div>
 
                             {/* Body */}
                             <div className="mb-4">
                               <div className="flex items-center gap-2 mb-1">
                                 <TrendingUp className="w-3 h-3 text-foreground-subtle" />
-                                <span className="text-xs text-foreground-subtle uppercase tracking-wide">Body</span>
+                                <span className="text-xs text-foreground-subtle uppercase tracking-wide">Primary Text</span>
                                 {score && (
                                   <span className={`text-xs font-medium ${getScoreColor(score.readability)}`}>
                                     {score.readability}
                                   </span>
                                 )}
                               </div>
-                              <p className="text-foreground-muted">{variation.body}</p>
+                              <p className="text-foreground-muted">{variation.primaryText}</p>
                             </div>
 
                             {/* CTA */}

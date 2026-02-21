@@ -20,6 +20,7 @@ interface AdOutput {
   platform: string;
   variants: AdVariant[];
   score?: ContentScore;
+  id?: string;
 }
 
 export async function generateAd(
@@ -108,7 +109,7 @@ IMPORTANT: Return ONLY valid JSON, no additional text or markdown formatting.`;
   output.score = score;
 
   // Save to database
-  await prisma.content.create({
+  const content = await prisma.content.create({
     data: {
       userId,
       contentType: "ad",
@@ -120,5 +121,5 @@ IMPORTANT: Return ONLY valid JSON, no additional text or markdown formatting.`;
     },
   });
 
-  return output;
+  return { ...output, id: content.id };
 }

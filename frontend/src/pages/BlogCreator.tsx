@@ -3,7 +3,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMutation } from "@tanstack/react-query";
-import { generateBlog } from "@/lib/api";
+import { generateBlog, improveContent, getContentVersions, BlogContent, ContentVersion } from "@/lib/api";
 import { toast } from "sonner";
 import { 
   ChevronDown, 
@@ -19,7 +19,12 @@ import {
   Wand2,
   AlignLeft,
   Hash,
-  Clock
+  Clock,
+  History as HistoryIcon,
+  TrendingUp,
+  Zap,
+  ShieldCheck,
+  Star
 } from "lucide-react";
 
 interface CollapsibleSectionProps {
@@ -67,20 +72,71 @@ export default function BlogCreator() {
   const [wordCount, setWordCount] = useState("1500");
   const [tone, setTone] = useState("Professional");
   const [generatedContent, setGeneratedContent] = useState("");
+  const [currentContentId, setCurrentContentId] = useState<string | null>(null);
+  const [versions, setVersions] = useState<ContentVersion[]>([]);
   const [copied, setCopied] = useState(false);
 
   const mutation = useMutation({
-    mutationFn: (data: any) => generateBlog(data),
+    mutationFn: (data: {
+      topic: string;
+      audience: string;
+      tone: string;
+      keywords?: string[];
+      length: "short" | "medium" | "long";
+      intent?: string;
+    }) => generateBlog(data),
     onSuccess: (result) => {
       if (result.success && result.data) {
         setGeneratedContent(result.data.content);
+        setCurrentContentId(result.data.id || null);
         toast.success("Blog draft generated successfully!");
+        if (result.data.id) {
+          fetchVersions(result.data.id);
+        }
       }
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || "Failed to generate blog draft");
     }
   });
+
+  const improveMutation = useMutation({
+    mutationFn: ({ id, mode }: { id: string; mode: string }) => improveContent(id, mode),
+    onSuccess: (result) => {
+      if (result.success && result.data) {
+        setGeneratedContent(result.data.body);
+        toast.success(`Content improved! (Version ${result.data.versionNumber})`);
+        fetchVersions(currentContentId!);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to improve content");
+    }
+  });
+
+  const fetchVersions = async (id: string) => {
+    try {
+      const result = await getContentVersions(id);
+      if (result.success) {
+        setVersions(result.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch versions", error);
+    }
+  };
+
+  const handleImprove = (mode: string) => {
+    if (!currentContentId) {
+      toast.error("Generate a draft first before improving");
+      return;
+    }
+    improveMutation.mutate({ id: currentContentId, mode });
+  };
+
+  const handleSwitchVersion = (version: ContentVersion) => {
+    setGeneratedContent(version.body);
+    toast.info(`Switched to Version ${version.versionNumber}`);
+  };
 
   const handleGenerate = () => {
     if (!topic || !audience) {
@@ -256,6 +312,82 @@ export default function BlogCreator() {
                 </div>
               </div>
             </CollapsibleSection>
+
+            {generatedContent && (
+              <>
+                <CollapsibleSection
+                  title="Refinement & Evolution"
+                  icon={<Wand2 className="w-4 h-4 text-purple-400" />}
+                  isOpen={openSection === "refine"}
+                  onToggle={() => setOpenSection(openSection === "refine" ? "" : "refine")}
+                >
+                  <div className="space-y-3">
+                    <p className="text-[10px] text-foreground-muted uppercase tracking-wider font-bold">Improve with Goal</p>
+                    <div className="grid grid-cols-1 gap-2">
+                      {[
+                        { id: "seo", label: "SEO Optimization", icon: TrendingUp, color: "text-blue-400" },
+                        { id: "conversion", label: "Conversion Focused", icon: Zap, color: "text-yellow-400" },
+                        { id: "clarity", label: "Maximum Clarity", icon: ShieldCheck, color: "text-green-400" },
+                        { id: "luxury", label: "Luxury / Premium", icon: Star, color: "text-purple-400" },
+                      ].map((mode) => (
+                        <button 
+                          key={mode.id}
+                          onClick={() => handleImprove(mode.id)}
+                          disabled={improveMutation.isPending}
+                          className="flex items-center gap-3 w-full p-2.5 text-left text-sm rounded-lg border border-border-subtle bg-background hover:bg-background-hover hover:border-primary/30 transition-all group disabled:opacity-50"
+                        >
+                          <mode.icon className={`w-4 h-4 ${mode.color}`} />
+                          <span className="flex-1 font-medium">{mode.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </CollapsibleSection>
+
+                <CollapsibleSection
+                  title="Version History"
+                  icon={<HistoryIcon className="w-4 h-4 text-orange-400" />}
+                  isOpen={openSection === "history"}
+                  onToggle={() => setOpenSection(openSection === "history" ? "" : "history")}
+                  badge={versions.length > 0 ? `${versions.length} versions` : undefined}
+                >
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1 scrollbar-thin">
+                    {versions.length === 0 ? (
+                      <p className="text-xs text-foreground-muted text-center py-4">No other versions yet.</p>
+                    ) : (
+                      versions.map((v) => (
+                        <button 
+                          key={v.id}
+                          onClick={() => handleSwitchVersion(v)}
+                          className={`w-full flex flex-col gap-1 p-3 text-left rounded-lg border transition-all ${
+                            generatedContent === v.body
+                              ? "border-primary bg-primary/5 shadow-sm shadow-primary/10"
+                              : "border-border-subtle hover:border-primary/30 hover:bg-background-hover"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-foreground">Version {v.versionNumber}</span>
+                            <span className="text-[10px] text-foreground-muted">
+                              {new Date(v.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${
+                              v.improvementType === 'original' ? 'bg-background-surface text-foreground-muted' : 'bg-primary/10 text-primary'
+                            }`}>
+                              {v.improvementType || 'Modified'}
+                            </span>
+                            {v.scores?.total && (
+                              <span className="text-[10px] font-medium text-success">Score: {v.scores.total}</span>
+                            )}
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </CollapsibleSection>
+              </>
+            )}
           </div>
 
           {/* Generate Button */}

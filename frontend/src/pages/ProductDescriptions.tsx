@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMutation } from "@tanstack/react-query";
-import { generateProduct } from "@/lib/api";
+import { generateProduct, improveContent, getContentVersions, ProductContent, ContentVersion } from "@/lib/api";
 import { toast } from "sonner";
 import { 
   Sparkles,
@@ -19,7 +19,13 @@ import {
   Star,
   Zap,
   Target,
-  Award
+  Award,
+  History as HistoryIcon,
+  ShieldCheck,
+  Wand2,
+  ChevronDown,
+  ChevronUp,
+  RotateCcw
 } from "lucide-react";
 
 interface Feature {
@@ -36,21 +42,90 @@ export default function ProductDescriptions() {
     { id: "1", feature: "", benefit: "" },
   ]);
   const [tone, setTone] = useState("Premium");
-  const [generatedContent, setGeneratedContent] = useState<any>(null);
+  const [generatedContent, setGeneratedContent] = useState<ProductContent | null>(null);
+  const [currentContentId, setCurrentContentId] = useState<string | null>(null);
+  const [versions, setVersions] = useState<ContentVersion[]>([]);
+  const [openSection, setOpenSection] = useState<string>("");
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
 
   const mutation = useMutation({
-    mutationFn: (data: any) => generateProduct(data),
+    mutationFn: (data: {
+      productName: string;
+      features: string;
+      tone: string;
+      targetAudience: string;
+      length: "short" | "medium" | "long";
+    }) => generateProduct(data),
     onSuccess: (result) => {
       if (result.success && result.data) {
         setGeneratedContent(result.data);
+        setCurrentContentId(result.data.id || null);
         toast.success("Product description generated successfully!");
+        if (result.data.id) {
+          fetchVersions(result.data.id);
+        }
       }
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || "Failed to generate product description");
     }
   });
+
+  const improveMutation = useMutation({
+    mutationFn: ({ id, mode }: { id: string; mode: string }) => improveContent(id, mode),
+    onSuccess: (result) => {
+      if (result.success && result.data) {
+        try {
+          // If the improvement returned JSON (we should hope so or handle both)
+          // For now, assume it's the refined long description if not JSON
+          let data: ProductContent;
+          try {
+            data = JSON.parse(result.data.body);
+          } catch {
+            data = { ...generatedContent!, longDesc: result.data.body };
+          }
+          setGeneratedContent(data);
+          toast.success(`Content improved! (Version ${result.data.versionNumber})`);
+          fetchVersions(currentContentId!);
+        } catch (e) {
+          console.error("Failed to process improved content", e);
+        }
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to improve content");
+    }
+  });
+
+  const fetchVersions = async (id: string) => {
+    try {
+      const result = await getContentVersions(id);
+      if (result.success) {
+        setVersions(result.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch versions", error);
+    }
+  };
+
+  const handleImprove = (mode: string) => {
+    if (!currentContentId) {
+      toast.error("Generate a description first before improving");
+      return;
+    }
+    improveMutation.mutate({ id: currentContentId, mode });
+  };
+
+  const handleSwitchVersion = (version: ContentVersion) => {
+    try {
+      setGeneratedContent(JSON.parse(version.body));
+      toast.info(`Switched to Version ${version.versionNumber}`);
+    } catch (e) {
+      // Fallback if it's not JSON
+      setGeneratedContent({ ...generatedContent!, longDesc: version.body });
+      toast.info(`Switched to Version ${version.versionNumber}`);
+    }
+  };
 
   const addFeature = () => {
     setFeatures([...features, { id: Date.now().toString(), feature: "", benefit: "" }]);
@@ -211,27 +286,120 @@ export default function ProductDescriptions() {
               </div>
             </div>
 
-            {/* Tone */}
-            <div>
-              <label className="text-xs font-semibold text-foreground-muted uppercase tracking-wide block mb-2">
-                Tone
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {["Premium", "Casual", "Playful", "Technical", "Luxe"].map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setTone(t)}
-                    className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
-                      tone === t
-                        ? "border-green-500 bg-green-500/10 text-green-400"
-                        : "border-border-subtle hover:border-green-500/50 hover:bg-green-500/5"
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
+            {/* Tone wrapped in collapsible */}
+            <div className="border border-border-subtle rounded-xl overflow-hidden bg-background-surface/50">
+              <button 
+                onClick={() => setOpenSection(openSection === "tone" ? "" : "tone")}
+                className="w-full flex items-center justify-between p-4 hover:bg-background-hover transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <Package className="w-4 h-4 text-green-400" />
+                  <span className="font-medium text-sm">Description Tone</span>
+                </div>
+                {openSection === "tone" ? <ChevronUp className="w-4 h-4 text-foreground-muted" /> : <ChevronDown className="w-4 h-4 text-foreground-muted" />}
+              </button>
+              {openSection === "tone" && (
+                <div className="px-4 pb-4">
+                  <div className="flex flex-wrap gap-2">
+                    {["Premium", "Casual", "Playful", "Technical", "Luxe"].map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => setTone(t)}
+                        className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
+                          tone === t
+                            ? "border-green-500 bg-green-500/10 text-green-400"
+                            : "border-border-subtle hover:border-green-500/50 hover:bg-green-500/5"
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+
+            {generatedContent && (
+              <>
+                <div className="border border-border-subtle rounded-xl overflow-hidden bg-background-surface/50">
+                  <button 
+                    onClick={() => setOpenSection(openSection === "refine" ? "" : "refine")}
+                    className="w-full flex items-center justify-between p-4 hover:bg-background-hover transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Wand2 className="w-4 h-4 text-purple-400" />
+                      <span className="font-medium text-sm">Conversion Refinement</span>
+                    </div>
+                    {openSection === "refine" ? <ChevronUp className="w-4 h-4 text-foreground-muted" /> : <ChevronDown className="w-4 h-4 text-foreground-muted" />}
+                  </button>
+                  {openSection === "refine" && (
+                    <div className="px-4 pb-4 space-y-3">
+                      <div className="grid grid-cols-1 gap-2">
+                        {[
+                          { id: "seo", label: "SEO Optimization", icon: TrendingUp, color: "text-blue-400" },
+                          { id: "conversion", label: "Max Conversion", icon: Zap, color: "text-yellow-400" },
+                          { id: "clarity", label: "Better Clarity", icon: ShieldCheck, color: "text-green-400" },
+                          { id: "luxury", label: "Luxury / Premium", icon: Star, color: "text-purple-400" },
+                        ].map((mode) => (
+                          <button 
+                            key={mode.id}
+                            onClick={() => handleImprove(mode.id)}
+                            disabled={improveMutation.isPending}
+                            className="flex items-center gap-3 w-full p-2.5 text-left text-sm rounded-lg border border-border-subtle bg-background hover:bg-background-hover hover:border-primary/30 transition-all group disabled:opacity-50"
+                          >
+                            <mode.icon className={`w-4 h-4 ${mode.color}`} />
+                            <span className="flex-1 font-medium">{mode.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border border-border-subtle rounded-xl overflow-hidden bg-background-surface/50">
+                  <button 
+                    onClick={() => setOpenSection(openSection === "history" ? "" : "history")}
+                    className="w-full flex items-center justify-between p-4 hover:bg-background-hover transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <HistoryIcon className="w-4 h-4 text-orange-400" />
+                      <span className="font-medium text-sm">Version History</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-400/10 text-orange-400">
+                        {versions.length}
+                      </span>
+                    </div>
+                    {openSection === "history" ? <ChevronUp className="w-4 h-4 text-foreground-muted" /> : <ChevronDown className="w-4 h-4 text-foreground-muted" />}
+                  </button>
+                  {openSection === "history" && (
+                    <div className="px-4 pb-4 space-y-2 max-h-60 overflow-y-auto scrollbar-thin">
+                      {versions.map((v) => (
+                        <button 
+                          key={v.id}
+                          onClick={() => handleSwitchVersion(v)}
+                          className={`w-full flex flex-col gap-1 p-3 text-left rounded-lg border transition-all ${
+                            JSON.stringify(generatedContent) === v.body
+                              ? "border-green-500 bg-green-500/5 shadow-sm shadow-green-500/10"
+                              : "border-border-subtle hover:border-green-500/30 hover:bg-background-hover"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-foreground">Version {v.versionNumber}</span>
+                            <span className="text-[10px] text-foreground-muted">
+                              {new Date(v.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded w-fit ${
+                            v.improvementType === 'original' ? 'bg-background-surface text-foreground-muted' : 'bg-green-500/10 text-green-400'
+                          }`}>
+                            {v.improvementType || 'Modified'}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Generate Button */}

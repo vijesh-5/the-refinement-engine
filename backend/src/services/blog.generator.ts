@@ -21,6 +21,7 @@ interface BlogOutput {
   conversionInsights?: string;
   reasoningSummary?: string;
   score?: ContentScore;
+  id?: string;
 }
 
 export async function generateBlog(
@@ -49,7 +50,7 @@ export async function generateBlog(
   };
 
   // Save to database
-  await prisma.content.create({
+  const content = await prisma.content.create({
     data: {
       userId,
       contentType: "blog",
@@ -61,5 +62,5 @@ export async function generateBlog(
     },
   });
 
-  return output;
+  return { ...output, id: content.id };
 }
