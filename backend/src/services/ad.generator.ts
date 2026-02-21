@@ -8,6 +8,7 @@ interface AdInput {
   targetAudience: string;
   keyBenefit: string;
   tone: "direct" | "playful" | "urgent" | "professional";
+  brandId?: string;
 }
 
 interface AdVariant {
@@ -53,9 +54,25 @@ export async function generateAd(
 
   const specs = platformSpecs[input.platform];
 
+  let brandContext = "";
+  if (input.brandId) {
+    const brand = await prisma.brandProfile.findUnique({
+      where: { id: input.brandId, userId },
+    });
+    if (brand) {
+      brandContext = `
+BRAND IDENTITY: ${brand.name}
+BRAND TONE: ${brand.tone}
+BRAND VOICE: ${brand.brandVoice || "N/A"}
+TARGET AUDIENCE: ${brand.targetAudience || input.targetAudience}
+BANNED WORDS: ${brand.brandVoice ? brand.bannedWords.join(", ") : "None"}
+`;
+    }
+  }
+
   // Build comprehensive prompt using ALL input fields
   const prompt = `You are an expert advertising copywriter. Create ${specs.variants} high-converting ad copy variants for ${input.platform} with these specifications:
-
+${brandContext}
 PRODUCT/SERVICE: ${input.product}
 TARGET AUDIENCE: ${input.targetAudience}
 KEY BENEFIT: ${input.keyBenefit}

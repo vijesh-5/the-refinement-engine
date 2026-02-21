@@ -9,6 +9,7 @@ import templateRoutes from "./routes/template.routes";
 import dashboardRoutes from "./routes/dashboard.routes";
 import userRoutes from "./routes/user.routes";
 import generateRoutes from "./routes/generate.routes";
+import brandRoutes from "./routes/brand.routes";
 
 export function createApp(): Application {
   const app = express();
@@ -36,6 +37,7 @@ export function createApp(): Application {
         users: "/api/users/*",
         content: "/api/content/*",
         templates: "/api/templates/*",
+        brands: "/api/brands/*",
       },
     });
   });
@@ -47,6 +49,7 @@ export function createApp(): Application {
   app.use("/api/templates", templateRoutes);
   app.use("/api/dashboard", dashboardRoutes);
   app.use("/api/users", userRoutes);
+  app.use("/api/brands", brandRoutes);
 
   // Error handling
   app.use(notFoundHandler);

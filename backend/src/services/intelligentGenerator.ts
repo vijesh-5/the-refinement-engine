@@ -7,6 +7,13 @@ export interface PipelineInput {
   keywords: string[];
   length: string;
   intent?: string;
+  brand?: {
+    name: string;
+    tone: string;
+    brandVoice?: string;
+    targetAudience?: string;
+    bannedWords: string[];
+  };
 }
 
 export interface PipelineOutput {
@@ -49,15 +56,29 @@ class IntelligentGeneratorService {
   }
 
   private async runWriterAgent(input: PipelineInput): Promise<string> {
+    const brandContext = input.brand ? `
+    BRAND IDENTITY: ${input.brand.name}
+    BRAND TONE: ${input.brand.tone}
+    BRAND VOICE: ${input.brand.brandVoice || "N/A"}
+    BANNED WORDS: ${input.brand.bannedWords.join(", ") || "None"}
+    ` : "";
+
     const prompt = `You are an expert content writer. Create an initial draft for a blog post.
+    ${brandContext}
     TOPIC: ${input.topic}
-    AUDIENCE: ${input.audience}
-    TONE: ${input.tone}
+    AUDIENCE: ${input.audience || (input.brand ? input.brand.targetAudience : "")}
+    TONE: ${input.tone || (input.brand ? input.brand.tone : "")}
     KEYWORDS: ${input.keywords.join(", ")}
     LENGTH: ${input.length}
     INTENT: ${input.intent || "Informative"}
 
-    Focus on high-quality storytelling and value. Output the draft in HTML format with proper headings and structure.`;
+    Focus on high-quality storytelling and value.
+    
+    FORMATTING RULES:
+    - Use clean Markdown formatting (## for headings, **bold**, *italic*, - for bullet lists).
+    - Do NOT output HTML tags, CSS, or any code. No <html>, <head>, <style>, <div>, or similar tags.
+    - Write the blog post as readable, copyable text that a human would paste into a CMS.
+    - Use line breaks between paragraphs for readability.`;
 
     return geminiService.generateContent(prompt);
   }
@@ -66,7 +87,10 @@ class IntelligentGeneratorService {
     draft: string,
     input: PipelineInput,
   ): Promise<string> {
+    const brandContext = input.brand ? `BRAND IDENTITY: ${input.brand.name} (${input.brand.tone})` : "";
+
     const prompt = `You are a Senior SEO Specialist. Critique the following blog draft for SEO optimization.
+    ${brandContext}
     DRAFT: ${draft}
     TARGET KEYWORDS: ${input.keywords.join(", ")}
 
@@ -85,7 +109,14 @@ class IntelligentGeneratorService {
     draft: string,
     input: PipelineInput,
   ): Promise<string> {
+    const brandContext = input.brand ? `
+    BRAND IDENTITY: ${input.brand.name}
+    BRAND VOICE: ${input.brand.brandVoice || "N/A"}
+    TARGET AUDIENCE: ${input.brand.targetAudience || input.audience}
+    ` : "";
+
     const prompt = `You are a Conversion Rate Optimization (CRO) Expert. Critique the following blog draft for its ability to drive action.
+    ${brandContext}
     DRAFT: ${draft}
     TARGET AUDIENCE: ${input.audience}
     INTENT: ${input.intent}
@@ -107,32 +138,45 @@ class IntelligentGeneratorService {
     conversionFeedback: string,
     input: PipelineInput,
   ): Promise<PipelineOutput> {
+    const brandContext = input.brand ? `
+    BRAND COMPLIANCE: Adhere strictly to ${input.brand.name}'s voice: ${input.brand.brandVoice || "N/A"}.
+    BANNED WORDS: DO NOT USE: ${input.brand.bannedWords.join(", ") || "None"}
+    ` : "";
+
     const prompt = `You are a Master Content Strategist. Your task is to synthesize an initial draft with feedback from an SEO Critic and a Conversion Critic to produce a final, high-performance blog post.
 
     INITIAL DRAFT: ${writerOutput}
     SEO FEEDBACK: ${seoFeedback}
     CONVERSION FEEDBACK: ${conversionFeedback}
     SPECIFICATIONS: Topic=${input.topic}, Audience=${input.audience}, Tone=${input.tone}
+    ${brandContext}
 
     Instructions:
     1. Apply the SEO feedback to optimize for ranking (keyword placement, headings).
     2. Apply the conversion feedback to optimize for engagement (CTA, emotional hooks).
     3. Maintain the original core message while elevating the quality.
     4. Create all necessary metadata (title, meta description, outline).
+    5. Ensure brand voice compliance and word exclusion. 
+
+    FORMATTING RULES FOR finalContent:
+    - Use clean Markdown formatting (## for headings, **bold**, *italic*, - for bullet lists).
+    - Do NOT output HTML tags, CSS, or any code. No <html>, <head>, <style>, <div>, or similar tags.
+    - The content should be readable, copyable plain text that a human would paste into a CMS or blog editor.
+    - Use line breaks between paragraphs.
 
     Return the response in the following JSON format:
     {
       "title": "Engaging, SEO-optimized title",
       "metaDescription": "150-160 character meta description",
       "outline": ["Section 1", "Section 2", ...],
-      "finalContent": "The complete polished blog post in HTML format",
+      "finalContent": "The complete polished blog post in clean Markdown (no HTML tags)",
       "wordCount": actual_word_count_number,
       "seoInsights": "Brief summary of what was improved for SEO",
       "conversionInsights": "Brief summary of what was improved for conversion",
       "reasoningSummary": "Professional summary of the refinement process"
     }
 
-    IMPORTANT: Return ONLY valid JSON.`;
+    IMPORTANT: Return ONLY valid JSON. The finalContent field must contain clean Markdown text, NOT HTML.`;
 
     const response = await geminiService.generateContent(prompt);
     return geminiService.parseJsonResponse<PipelineOutput>(response);

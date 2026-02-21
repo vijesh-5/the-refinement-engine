@@ -10,7 +10,8 @@ import {
   Clock, 
   Sparkles,
   FileText,
-  TrendingUp
+  TrendingUp,
+  Briefcase
 } from "lucide-react";
 
 const quickActions = [
@@ -37,6 +38,14 @@ const quickActions = [
     to: "/app/products",
     color: "text-green-400",
     bgColor: "bg-green-500/10",
+  },
+  {
+    icon: Briefcase,
+    title: "Brand Identity",
+    description: "Define your voice, audience, and banned words",
+    to: "/app/brands",
+    color: "text-orange-400",
+    bgColor: "bg-orange-500/10",
   },
 ];
 

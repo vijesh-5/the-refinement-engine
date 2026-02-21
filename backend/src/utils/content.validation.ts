@@ -14,8 +14,8 @@ export const updateContentSchema = z.object({
 
 export const listContentSchema = z.object({
   status: z.enum(["DRAFT", "COMPLETE"]).optional(),
-  limit: z.number().int().min(1).max(100).default(20),
-  offset: z.number().int().min(0).default(0),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
 });
 
 export type CreateContentRequest = z.infer<typeof createContentSchema>;

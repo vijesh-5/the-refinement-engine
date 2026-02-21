@@ -9,6 +9,7 @@ interface BlogInput {
   keywords: string[];
   length: "short" | "medium" | "long";
   intent?: string;
+  brandId?: string;
 }
 
 interface BlogOutput {
@@ -28,9 +29,26 @@ export async function generateBlog(
   userId: string,
   input: BlogInput,
 ): Promise<BlogOutput> {
+  let brandContext = undefined;
+  if (input.brandId) {
+    const brand = await prisma.brandProfile.findUnique({
+      where: { id: input.brandId, userId },
+    });
+    if (brand) {
+      brandContext = {
+        name: brand.name,
+        tone: brand.tone,
+        brandVoice: brand.brandVoice || undefined,
+        targetAudience: brand.targetAudience || undefined,
+        bannedWords: brand.bannedWords,
+      };
+    }
+  }
+
   // Use the multi-agent pipeline for intelligent generation
   const pipelineResult = await intelligentGeneratorService.generateWithPipeline({
     ...input,
+    brand: brandContext,
     length: input.length === "short" ? "800 words" : input.length === "medium" ? "1500 words" : "2500 words"
   });
 

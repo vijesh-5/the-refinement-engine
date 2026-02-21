@@ -3,8 +3,10 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useMutation } from "@tanstack/react-query";
-import { generateAd, improveContent, getContentVersions, AdContent, AdVariant, ContentVersion } from "@/lib/api";
+import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
+import { stripMarkdown } from "@/lib/markdown";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { generateAd, improveContent, getContentVersions, getBrands, AdContent, AdVariant, ContentVersion, BrandProfile } from "@/lib/api";
 import { toast } from "sonner";
 import { 
   Zap,
@@ -16,15 +18,18 @@ import {
   Eye,
   MousePointer,
   Flame,
-  ThumbsUp,
-  AlertTriangle,
-  History as HistoryIcon,
   Star,
   ShieldCheck,
   Wand2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Briefcase,
+  ThumbsUp,
+  AlertTriangle,
+  History as HistoryIcon
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Link } from "react-router-dom";
 
 // Platform icons as simple components
 const FacebookIcon = () => (
@@ -71,7 +76,13 @@ export default function AdCopywriter() {
   const [currentContentId, setCurrentContentId] = useState<string | null>(null);
   const [versions, setVersions] = useState<ContentVersion[]>([]);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [selectedBrandId, setSelectedBrandId] = useState<string>("none");
   const [openSection, setOpenSection] = useState<string>("platform");
+
+  const { data: brands } = useQuery({
+    queryKey: ["brands"],
+    queryFn: getBrands,
+  });
 
   const mutation = useMutation({
     mutationFn: (data: {
@@ -80,6 +91,7 @@ export default function AdCopywriter() {
       targetAudience: string;
       keyBenefit: string;
       tone: "direct" | "playful" | "urgent" | "professional";
+      brandId?: string;
     }) => generateAd(data),
     onSuccess: (result) => {
       if (result.success && result.data) {
@@ -162,12 +174,13 @@ export default function AdCopywriter() {
       product,
       targetAudience: audience,
       keyBenefit: benefit,
-      tone: selectedTone.toLowerCase() as "direct" | "playful" | "urgent" | "professional"
+      tone: selectedTone.toLowerCase() as "direct" | "playful" | "urgent" | "professional",
+      brandId: selectedBrandId === "none" ? undefined : selectedBrandId
     });
   };
 
   const handleCopy = (index: number, text: string) => {
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(stripMarkdown(text));
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 2000);
   };
@@ -203,6 +216,45 @@ export default function AdCopywriter() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin">
+            {/* Brand Identity */}
+            <div className="border border-border-subtle rounded-xl overflow-hidden bg-background-surface/50">
+              <button 
+                onClick={() => setOpenSection(openSection === "brand" ? "" : "brand")}
+                className="w-full flex items-center justify-between p-4 hover:bg-background-hover transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <Briefcase className="w-4 h-4 text-purple-400" />
+                  <span className="font-medium text-sm">Brand Identity</span>
+                </div>
+                {openSection === "brand" ? <ChevronUp className="w-4 h-4 text-foreground-muted" /> : <ChevronDown className="w-4 h-4 text-foreground-muted" />}
+              </button>
+              {openSection === "brand" && (
+                <div className="px-4 pb-4 space-y-4">
+                  <div>
+                    <label className="text-xs font-medium text-foreground-muted block mb-2">
+                      Select Brand Memory
+                    </label>
+                    <Select value={selectedBrandId} onValueChange={setSelectedBrandId}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="No brand selected" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Generic / No Brand</SelectItem>
+                        {brands?.data?.map((brand: BrandProfile) => (
+                          <SelectItem key={brand.id} value={brand.id}>
+                            {brand.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[10px] text-foreground-subtle mt-2">
+                      Injects voice and audience. <Link to="/app/brands" className="text-primary hover:underline">Manage brands</Link>
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Platform Selection */}
             <div>
               <label className="text-xs font-semibold text-foreground-muted uppercase tracking-wide block mb-3">
@@ -496,7 +548,7 @@ export default function AdCopywriter() {
                                   </span>
                                 )}
                               </div>
-                              <p className="text-foreground-muted">{variation.primaryText}</p>
+                              <MarkdownRenderer content={variation.primaryText} />
                             </div>
 
                             {/* CTA */}
