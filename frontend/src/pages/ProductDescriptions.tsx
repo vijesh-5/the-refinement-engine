@@ -7,6 +7,7 @@ import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
 import { stripMarkdown } from "@/lib/markdown";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { generateProduct, improveContent, getContentVersions, getBrands, ProductContent, ContentVersion, BrandProfile } from "@/lib/api";
+import { SaveContentButton } from "@/components/ui/SaveContentButton";
 import { toast } from "sonner";
 import { 
   Sparkles,
@@ -517,6 +518,18 @@ export default function ProductDescriptions() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Action Bar */}
+              <div className="flex items-center justify-end gap-2">
+                <SaveContentButton
+                  contentType="product"
+                  disabled={!generatedContent}
+                  getTitle={() => productName || "Untitled Product"}
+                  getBody={() => `${generatedContent!.headline}\n\n${generatedContent!.shortDesc}\n\n${generatedContent!.longDesc}`}
+                  getGeneratedOutput={() => generatedContent}
+                  getInputData={() => ({ productName, category, audience, features, tone, brandId: selectedBrandId !== "none" ? selectedBrandId : undefined })}
+                />
+              </div>
 
               {/* Headline */}
               <Card variant="default">

@@ -17,6 +17,10 @@ export const createContent = asyncHandler(
       data.title,
       data.body,
       data.templateId,
+      data.contentType,
+      data.status,
+      data.generatedOutput,
+      data.inputData,
     );
 
     res.status(201).json({

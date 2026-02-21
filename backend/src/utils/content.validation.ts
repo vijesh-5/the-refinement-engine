@@ -4,6 +4,10 @@ export const createContentSchema = z.object({
   title: z.string().min(1, "Title is required").max(255),
   body: z.string().min(1, "Body is required"),
   templateId: z.string().uuid().optional(),
+  contentType: z.enum(["blog", "ad", "product", "general"]).default("general"),
+  status: z.enum(["DRAFT", "COMPLETE"]).default("DRAFT"),
+  generatedOutput: z.any().optional(),
+  inputData: z.any().optional(),
 });
 
 export const updateContentSchema = z.object({

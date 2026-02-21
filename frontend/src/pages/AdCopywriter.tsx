@@ -7,6 +7,7 @@ import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
 import { stripMarkdown } from "@/lib/markdown";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { generateAd, improveContent, getContentVersions, getBrands, AdContent, AdVariant, ContentVersion, BrandProfile } from "@/lib/api";
+import { SaveContentButton } from "@/components/ui/SaveContentButton";
 import { toast } from "sonner";
 import { 
   Zap,
@@ -476,6 +477,14 @@ export default function AdCopywriter() {
                   <RefreshCw className="w-4 h-4" />
                   Regenerate
                 </Button>
+                <SaveContentButton
+                  contentType="ad"
+                  disabled={variations.length === 0}
+                  getTitle={() => `${product || "Untitled"} — ${platforms.find(p => p.id === selectedPlatform)?.name} Ad`}
+                  getBody={() => variations.map((v, i) => `Variant ${i + 1}:\n${v.headline}\n${v.primaryText}\n${v.cta}`).join("\n\n")}
+                  getGeneratedOutput={() => ({ variants: variations })}
+                  getInputData={() => ({ platform: selectedPlatform, product, audience, benefit, tone: selectedTone, brandId: selectedBrandId !== "none" ? selectedBrandId : undefined })}
+                />
               </div>
 
               {/* Variations */}

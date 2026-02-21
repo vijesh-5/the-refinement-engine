@@ -6,6 +6,10 @@ export async function createContent(
   title: string,
   body: string,
   templateId?: string,
+  contentType?: string,
+  status?: string,
+  generatedOutput?: any,
+  inputData?: any,
 ) {
   return prisma.content.create({
     data: {
@@ -13,6 +17,10 @@ export async function createContent(
       body,
       userId,
       templateId,
+      contentType: contentType || "general",
+      status: (status as any) || "DRAFT",
+      generatedOutput: generatedOutput || undefined,
+      inputData: inputData || undefined,
     },
     include: {
       template: true,
@@ -40,7 +48,7 @@ export async function updateContent(
 
   return prisma.content.update({
     where: { id: contentId },
-    data: updates,
+    data: updates as any,
   });
 }
 
@@ -102,7 +110,6 @@ export async function listUserContent(
   const [contents, total] = await Promise.all([
     prisma.content.findMany({
       where,
-      include: { template: true },
       orderBy: { createdAt: "desc" },
       take: limit,
       skip: offset,
@@ -116,7 +123,13 @@ export async function listUserContent(
         generatedOutput: true,
         createdAt: true,
         updatedAt: true,
-        template: true,
+        template: {
+          select: {
+            id: true,
+            name: true,
+            category: true,
+          },
+        },
       },
     }),
     prisma.content.count({ where }),

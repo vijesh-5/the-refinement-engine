@@ -329,6 +329,83 @@ export const getDashboard = async () => {
 };
 
 // ============================================
+// CONTENT MANAGEMENT
+// ============================================
+
+export interface SaveContentInput {
+  title: string;
+  body: string;
+  contentType: "blog" | "ad" | "product" | "general";
+  status: "DRAFT" | "COMPLETE";
+  generatedOutput?: any;
+  inputData?: any;
+}
+
+export interface ContentItem {
+  id: string;
+  title: string;
+  body: string;
+  status: "DRAFT" | "COMPLETE";
+  contentType: string;
+  inputData: any;
+  generatedOutput: any;
+  createdAt: string;
+  updatedAt: string;
+  template?: { id: string; name: string; category: string } | null;
+}
+
+export interface ContentListResponse {
+  data: ContentItem[];
+  meta: { total: number; limit: number; offset: number; hasMore: boolean };
+}
+
+export const saveContent = async (data: SaveContentInput) => {
+  return fetchWithAuth<ContentItem>(`${API_BASE_URL}/content`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+};
+
+export const listContent = async (params?: {
+  status?: string;
+  contentType?: string;
+  limit?: number;
+  offset?: number;
+}) => {
+  const query = new URLSearchParams();
+  if (params?.status) query.set("status", params.status);
+  if (params?.contentType) query.set("contentType", params.contentType);
+  if (params?.limit) query.set("limit", String(params.limit));
+  if (params?.offset) query.set("offset", String(params.offset));
+  const qs = query.toString();
+  return fetchWithAuth<ContentListResponse>(
+    `${API_BASE_URL}/content${qs ? `?${qs}` : ""}`
+  );
+};
+
+export const getContentItem = async (id: string) => {
+  return fetchWithAuth<ContentItem>(`${API_BASE_URL}/content/${id}`);
+};
+
+export const updateContentItem = async (
+  id: string,
+  data: Partial<Pick<SaveContentInput, "title" | "body" | "status">>
+) => {
+  return fetchWithAuth<ContentItem>(`${API_BASE_URL}/content/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+};
+
+export const deleteContentItem = async (id: string) => {
+  return fetchWithAuth(`${API_BASE_URL}/content/${id}`, {
+    method: "DELETE",
+  });
+};
+
+// ============================================
 // BRAND MANAGEMENT
 // ============================================
 

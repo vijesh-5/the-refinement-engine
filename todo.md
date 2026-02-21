@@ -16,31 +16,34 @@ This document tracks the evolution of Artifex from a visual mockup to a Content 
 
 ---
 
-## 🟡 In Progress / Immediate Next Steps
+## 🟢 Completed
 - [/] **Phase 2: Intelligent Pipeline Orchestration**
-  - [ ] Create `intelligentGenerator.ts` service.
-  - [ ] Implement Writer -> SEO Critic -> Conv Critic -> Synthesizer flow.
+  - [x] Create `intelligentGenerator.ts` service.
+  - [x] Implement Writer -> SEO Critic -> Conv Critic -> Synthesizer flow.
 
----
+### Phase 3 — Content Scoring Engine ✅
+- [x] Implement heuristic scoring for SEO, Readability, and Conversion.
+- [x] Store scores in PostgreSQL for historical tracking.
 
-## ⚪ Upcoming Roadmap (Steps to Do)
-### Phase 3 — Content Scoring Engine
-- [ ] Implement heuristic scoring for SEO, Readability, and Conversion.
-- [ ] Store scores in PostgreSQL for historical tracking.
+### Phase 4 — Version Evolution System ✅
+- [x] Create `content_versions` table.
+- [x] Implement `POST /api/content/:id/improve` endpoint.
+- [x] Add "Improve with Goal" dropdown in the Editor UI.
 
-### Phase 4 — Version Evolution System
-- [ ] Create `content_versions` table.
-- [ ] Implement `POST /api/content/:id/improve` endpoint.
-- [ ] Add "Improve with Goal" dropdown in the Editor UI.
-
-### Phase 5 — Brand Memory System
-- [ ] Create `brand_profiles` database table.
-- [ ] Build UI for users to define Tone, Persona, and Positioning.
-- [ ] Inject brand context into LLM prompts automatically.
+### Phase 5 — Brand Memory System ✅
+- [x] Create `brand_profiles` database table.
+- [x] Build UI for users to define Tone, Persona, and Positioning.
+- [x] Inject brand context into LLM prompts automatically.
 
 ### Phase 6 — Market Awareness ✅
 - [x] Implement basic competitor URL analysis.
 - [x] Instruct AI to differentiate content based on messaging gaps.
+
+### Content Persistence & Cleanup ✅
+- [x] Expand backend `createContentSchema` with contentType, status, generatedOutput, inputData.
+- [x] Add save buttons (draft/complete) to all generators.
+- [x] Rewrite Library page — remove mocks, fetch from database.
+- [x] Rewrite README.md — replace Lovable placeholder.
 
 ### Phase 7 & 8 — Prediction & Insights
 - [ ] Lightweight heuristic performance prediction.

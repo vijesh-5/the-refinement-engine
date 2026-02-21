@@ -1,72 +1,109 @@
-# Welcome to your Lovable project
+# Artifex — The Refinement Engine
 
-## Project info
+AI-powered content generation platform that creates high-quality, brand-consistent marketing content with built-in quality scoring and competitor intelligence.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Features
 
-## How can I edit this code?
+- **Blog Creator** — Generate SEO-optimized blog posts with configurable tone, audience, and keyword targeting
+- **Ad Copywriter** — Create platform-specific ad variants for Facebook, Instagram, Google, and LinkedIn
+- **Product Descriptions** — Generate e-commerce product copy with headlines, bullet points, and descriptions
+- **Brand Profiles** — Define brand voice, tone, banned words, and selling points — auto-injected into all content
+- **Competitor Intelligence** — Analyze competitor URLs to identify messaging gaps and auto-differentiate your content
+- **Content Library** — Save, browse, and manage all generated content with draft/complete status tracking
+- **Quality Scoring** — Every piece of content is scored on readability, SEO, and engagement
+- **Version History** — Improve content iteratively with AI refinement and track all versions
+- **Markdown Rendering** — Rich display of generated content with clean plain-text copy/export
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React, TypeScript, Vite, TanStack Query, shadcn/ui |
+| Backend | Node.js, Express, TypeScript |
+| Database | PostgreSQL, Prisma ORM |
+| AI | Google Gemini 2.5 Flash |
+| Auth | JWT (access + refresh tokens) |
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
 
-**Use your preferred IDE**
+- Node.js 18+
+- PostgreSQL running locally or a connection string
+- Google Gemini API key
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Setup
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+```bash
+# Clone the repo
+git clone https://github.com/your-username/the-refinement-engine.git
+cd the-refinement-engine
 
-Follow these steps:
-
-```sh
-# For Frontend
-cd frontend
-npm i
+# Backend setup
+cd backend
+cp .env.example .env  # Fill in DATABASE_URL and GEMINI_API_KEY
+npm install
+npx prisma migrate deploy
+npx prisma generate
 npm run dev
 
-# For Backend (in a separate terminal)
-cd backend
-npm i
+# Frontend setup (separate terminal)
+cd frontend
+npm install
 npm run dev
 ```
 
+The frontend runs on `http://localhost:5173` and the backend on `http://localhost:5000`.
 
-**Edit a file directly in GitHub**
+### Environment Variables
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Create a `.env` file in `backend/` with:
 
-**Use GitHub Codespaces**
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/artifex
+GEMINI_API_KEY=your_gemini_api_key
+JWT_SECRET=your_jwt_secret
+JWT_REFRESH_SECRET=your_jwt_refresh_secret
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Project Structure
 
-## What technologies are used for this project?
+```
+the-refinement-engine/
+├── backend/
+│   ├── prisma/              # Schema & migrations
+│   ├── src/
+│   │   ├── config/          # Database connection
+│   │   ├── controllers/     # Route handlers
+│   │   ├── middleware/       # Auth, error handling
+│   │   ├── routes/          # API route definitions
+│   │   ├── services/        # Business logic & AI generators
+│   │   └── utils/           # Validation schemas
+│   └── package.json
+├── frontend/
+│   ├── src/
+│   │   ├── components/      # Shared UI components
+│   │   ├── lib/             # API client, utilities
+│   │   └── pages/           # Application pages
+│   └── package.json
+└── README.md
+```
 
-This project is built with:
+## API Endpoints
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/signup` | Register |
+| POST | `/api/auth/login` | Login |
+| POST | `/api/generate/blog` | Generate blog post |
+| POST | `/api/generate/ad` | Generate ad variants |
+| POST | `/api/generate/product` | Generate product description |
+| GET | `/api/content` | List saved content |
+| POST | `/api/content` | Save content |
+| DELETE | `/api/content/:id` | Delete content |
+| GET | `/api/brands` | List brand profiles |
+| POST | `/api/competitors/analyze` | Analyze competitor URL |
 
-## How can I deploy this project?
+## License
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+MIT

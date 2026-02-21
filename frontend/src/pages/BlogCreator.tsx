@@ -6,6 +6,7 @@ import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
 import { stripMarkdown } from "@/lib/markdown";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { generateBlog, improveContent, getContentVersions, getBrands, BlogContent, ContentVersion, BrandProfile } from "@/lib/api";
+import { SaveContentButton } from "@/components/ui/SaveContentButton";
 import { toast } from "sonner";
 import { 
   ChevronDown, 
@@ -486,6 +487,14 @@ export default function BlogCreator() {
                 <Download className="w-4 h-4" />
                 Export
               </Button>
+              <SaveContentButton
+                contentType="blog"
+                disabled={!generatedContent}
+                getTitle={() => topic || "Untitled Blog"}
+                getBody={() => generatedContent}
+                getGeneratedOutput={() => ({ content: generatedContent })}
+                getInputData={() => ({ topic, audience, angle, keyword, wordCount, tone, brandId: selectedBrandId !== "none" ? selectedBrandId : undefined })}
+              />
             </div>
           </div>
 
