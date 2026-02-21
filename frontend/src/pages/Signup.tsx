@@ -3,6 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PenLine, ArrowRight, Mail, Lock, User, Eye, EyeOff, Check } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { signup } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
@@ -11,12 +14,45 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
+  const mutation = useMutation({
+    mutationFn: (data: any) => signup(data),
+    onSuccess: (result) => {
+      if (result.success) {
+        toast.success("Account created successfully!");
+        navigate("/app");
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to create account");
+    },
+  });
+
   const passwordStrength = password.length >= 8 ? "strong" : password.length >= 4 ? "medium" : "weak";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you'd create the account here
-    navigate("/app");
+    
+    if (!name || !email || !password) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+
+    // Split name into firstName and lastName
+    const nameParts = name.trim().split(" ");
+    const firstName = nameParts[0];
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
+
+    mutation.mutate({
+      email,
+      password,
+      firstName,
+      lastName,
+    });
   };
 
   return (
@@ -148,9 +184,14 @@ export default function Signup() {
               )}
             </div>
 
-            <Button type="submit" className="w-full h-12 text-base" size="lg">
-              Create account
-              <ArrowRight className="w-4 h-4" />
+            <Button 
+              type="submit" 
+              className="w-full h-12 text-base" 
+              size="lg"
+              disabled={mutation.isPending}
+            >
+              {mutation.isPending ? "Creating account..." : "Create account"}
+              {!mutation.isPending && <ArrowRight className="w-4 h-4" />}
             </Button>
 
             <p className="text-sm text-foreground-subtle text-center pt-2">

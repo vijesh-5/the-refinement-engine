@@ -3,6 +3,9 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useMutation } from "@tanstack/react-query";
+import { generateAd } from "@/lib/api";
+import { toast } from "sonner";
 import { 
   Zap,
   Target,
@@ -52,46 +55,48 @@ const platforms = [
   { id: "google", name: "Google", icon: GoogleIcon, color: "text-yellow-500", maxLength: 90 },
 ];
 
-const sampleVariations = [
-  {
-    hook: "Stop wasting hours on copy that doesn't convert.",
-    body: "Artifex uses AI to transform your ideas into high-performing ads in seconds. Join 10,000+ marketers already seeing 2x better results.",
-    cta: "Try Free for 7 Days →",
-    metrics: { hook: 94, emotional: 88, cta: 92 },
-    tags: ["Urgency", "Social Proof", "Clear CTA"],
-  },
-  {
-    hook: "Your competitors are using AI. Are you?",
-    body: "Write ad copy that actually sells. Artifex analyzes top-performing ads and generates variations proven to convert.",
-    cta: "Start Writing Smarter →",
-    metrics: { hook: 91, emotional: 85, cta: 89 },
-    tags: ["FOMO", "Authority", "Action-Oriented"],
-  },
-  {
-    hook: "We analyzed 1M+ ads. Here's what works.",
-    body: "Artifex brings the science of conversion to your fingertips. Generate, test, and optimize ad copy in one click.",
-    cta: "See How It Works →",
-    metrics: { hook: 87, emotional: 82, cta: 86 },
-    tags: ["Data-Driven", "Curiosity", "Low Friction"],
-  },
-];
-
 export default function AdCopywriter() {
   const [selectedPlatform, setSelectedPlatform] = useState("facebook");
   const [product, setProduct] = useState("");
   const [audience, setAudience] = useState("");
   const [benefit, setBenefit] = useState("");
-  const [selectedTone, setSelectedTone] = useState("Direct");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [variations, setVariations] = useState<typeof sampleVariations>([]);
+  const [selectedTone, setSelectedTone] = useState("Professional");
+  const [variations, setVariations] = useState<any[]>([]);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
+  const mutation = useMutation({
+    mutationFn: (data: any) => generateAd(data),
+    onSuccess: (result) => {
+      if (result.success && result.data) {
+        setVariations(result.data.variants || []);
+        toast.success("Ad variations generated successfully!");
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to generate ad variations");
+    }
+  });
+
   const handleGenerate = () => {
-    setIsGenerating(true);
-    setTimeout(() => {
-      setVariations(sampleVariations);
-      setIsGenerating(false);
-    }, 1800);
+    if (!product || !audience || !benefit) {
+      toast.error("All fields are required");
+      return;
+    }
+
+    const platformMap: Record<string, "Facebook" | "Instagram" | "Google" | "LinkedIn"> = {
+      facebook: "Facebook",
+      instagram: "Instagram",
+      google: "Google",
+      linkedin: "LinkedIn"
+    };
+
+    mutation.mutate({
+      platform: platformMap[selectedPlatform] || "Facebook",
+      product,
+      targetAudience: audience,
+      keyBenefit: benefit,
+      tone: selectedTone.toLowerCase() as any
+    });
   };
 
   const handleCopy = (index: number, text: string) => {
@@ -223,9 +228,9 @@ export default function AdCopywriter() {
               className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400" 
               size="lg"
               onClick={handleGenerate}
-              disabled={isGenerating}
+              disabled={mutation.isPending}
             >
-              {isGenerating ? (
+              {mutation.isPending ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Generating...
@@ -264,7 +269,8 @@ export default function AdCopywriter() {
               {/* Variations */}
               <div className="space-y-4">
                 {variations.map((variation, index) => {
-                  const avgScore = Math.round((variation.metrics.hook + variation.metrics.emotional + variation.metrics.cta) / 3);
+                  const score = mutation.data?.data?.score;
+                  const avgScore = score?.total || 0;
                   const ScoreIcon = getScoreIcon(avgScore);
                   
                   return (
@@ -285,7 +291,7 @@ export default function AdCopywriter() {
                                 <span className="text-xs font-semibold px-2 py-1 rounded-lg bg-blue-500/10 text-blue-400">
                                   V{index + 1}
                                 </span>
-                                {variation.tags.map((tag, i) => (
+                                {variation.tags?.map((tag: string, i: number) => (
                                   <span key={i} className="text-xs px-2 py-1 rounded-lg bg-background-surface text-foreground-subtle">
                                     {tag}
                                   </span>
@@ -310,9 +316,11 @@ export default function AdCopywriter() {
                               <div className="flex items-center gap-2 mb-1">
                                 <Eye className="w-3 h-3 text-foreground-subtle" />
                                 <span className="text-xs text-foreground-subtle uppercase tracking-wide">Hook</span>
-                                <span className={`text-xs font-medium ${getScoreColor(variation.metrics.hook)}`}>
-                                  {variation.metrics.hook}
-                                </span>
+                                {score && (
+                                  <span className={`text-xs font-medium ${getScoreColor(score.engagement)}`}>
+                                    {score.engagement}
+                                  </span>
+                                )}
                               </div>
                               <p className="text-lg font-semibold">{variation.hook}</p>
                             </div>
@@ -322,9 +330,11 @@ export default function AdCopywriter() {
                               <div className="flex items-center gap-2 mb-1">
                                 <TrendingUp className="w-3 h-3 text-foreground-subtle" />
                                 <span className="text-xs text-foreground-subtle uppercase tracking-wide">Body</span>
-                                <span className={`text-xs font-medium ${getScoreColor(variation.metrics.emotional)}`}>
-                                  {variation.metrics.emotional}
-                                </span>
+                                {score && (
+                                  <span className={`text-xs font-medium ${getScoreColor(score.readability)}`}>
+                                    {score.readability}
+                                  </span>
+                                )}
                               </div>
                               <p className="text-foreground-muted">{variation.body}</p>
                             </div>
@@ -333,9 +343,11 @@ export default function AdCopywriter() {
                             <div className="flex items-center gap-3 pt-4 border-t border-border-subtle">
                               <MousePointer className="w-4 h-4 text-primary" />
                               <span className="font-semibold text-primary">{variation.cta}</span>
-                              <span className={`text-xs font-medium ${getScoreColor(variation.metrics.cta)}`}>
-                                CTA Score: {variation.metrics.cta}
-                              </span>
+                              {score && (
+                                <span className={`text-xs font-medium ${getScoreColor(score.engagement)}`}>
+                                  CTA Score: {score.engagement}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
