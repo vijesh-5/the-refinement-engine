@@ -8,7 +8,8 @@ import {
   LayoutTemplate, 
   Settings,
   ChevronRight,
-  Briefcase
+  Briefcase,
+  Target
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -77,6 +78,15 @@ export function AppSidebar() {
             icon={<Briefcase className="w-4 h-4" />} 
             label="Brand Identity" 
             isActive={pathname === '/app/brands'}
+          />
+        </NavGroup>
+
+        <NavGroup label="Strategy">
+          <NavItem 
+            to="/app/competitors" 
+            icon={<Target className="w-4 h-4" />} 
+            label="Competitor Intel" 
+            isActive={pathname === '/app/competitors'}
           />
         </NavGroup>
 

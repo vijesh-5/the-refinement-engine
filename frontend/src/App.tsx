@@ -15,6 +15,7 @@ import Settings from "./pages/Settings";
 import Library from "./pages/Library";
 import Templates from "./pages/Templates";
 import BrandProfiles from "./pages/BrandProfiles";
+import CompetitorAnalysis from "./pages/CompetitorAnalysis";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/app/content" element={<Library />} />
             <Route path="/app/templates" element={<Templates />} />
             <Route path="/app/brands" element={<BrandProfiles />} />
+            <Route path="/app/competitors" element={<CompetitorAnalysis />} />
             <Route path="/app/settings" element={<Settings />} />
           </Route>
 

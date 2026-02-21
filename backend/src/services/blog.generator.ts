@@ -1,6 +1,7 @@
 import { prisma } from "../config/database";
 import { intelligentGeneratorService } from "./intelligentGenerator";
 import { scoringService, ContentScore } from "./scoring.service";
+import { competitorService } from "./competitor.service";
 
 interface BlogInput {
   topic: string;
@@ -45,11 +46,18 @@ export async function generateBlog(
     }
   }
 
+  // Fetch competitor context if brand is selected
+  let competitorContext = "";
+  if (input.brandId) {
+    competitorContext = await competitorService.getCompetitorContext(input.brandId);
+  }
+
   // Use the multi-agent pipeline for intelligent generation
   const pipelineResult = await intelligentGeneratorService.generateWithPipeline({
     ...input,
     brand: brandContext,
-    length: input.length === "short" ? "800 words" : input.length === "medium" ? "1500 words" : "2500 words"
+    length: input.length === "short" ? "800 words" : input.length === "medium" ? "1500 words" : "2500 words",
+    competitorContext,
   });
 
   // Calculate scores for the generated content

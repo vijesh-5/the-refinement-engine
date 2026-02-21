@@ -14,6 +14,7 @@ export interface PipelineInput {
     targetAudience?: string;
     bannedWords: string[];
   };
+  competitorContext?: string;
 }
 
 export interface PipelineOutput {
@@ -73,7 +74,9 @@ class IntelligentGeneratorService {
     INTENT: ${input.intent || "Informative"}
 
     Focus on high-quality storytelling and value.
-    
+    ${input.competitorContext ? `
+    ${input.competitorContext}
+    ` : ""}
     FORMATTING RULES:
     - Use clean Markdown formatting (## for headings, **bold**, *italic*, - for bullet lists).
     - Do NOT output HTML tags, CSS, or any code. No <html>, <head>, <style>, <div>, or similar tags.
@@ -150,13 +153,15 @@ class IntelligentGeneratorService {
     CONVERSION FEEDBACK: ${conversionFeedback}
     SPECIFICATIONS: Topic=${input.topic}, Audience=${input.audience}, Tone=${input.tone}
     ${brandContext}
+    ${input.competitorContext || ""}
 
     Instructions:
     1. Apply the SEO feedback to optimize for ranking (keyword placement, headings).
     2. Apply the conversion feedback to optimize for engagement (CTA, emotional hooks).
     3. Maintain the original core message while elevating the quality.
     4. Create all necessary metadata (title, meta description, outline).
-    5. Ensure brand voice compliance and word exclusion. 
+    5. Ensure brand voice compliance and word exclusion.
+    6. If competitor intelligence is provided, emphasize our differentiators and exploit competitor gaps.
 
     FORMATTING RULES FOR finalContent:
     - Use clean Markdown formatting (## for headings, **bold**, *italic*, - for bullet lists).
