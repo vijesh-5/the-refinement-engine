@@ -14,14 +14,14 @@ export default function Login() {
   const navigate = useNavigate();
 
   const mutation = useMutation({
-    mutationFn: (data: any) => login(data),
+    mutationFn: (data: Record<string, string>) => login(data),
     onSuccess: (result) => {
       if (result.success) {
         toast.success("Welcome back!");
         navigate("/app");
       }
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || "Invalid email or password");
     },
   });

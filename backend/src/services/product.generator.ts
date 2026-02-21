@@ -16,6 +16,7 @@ interface ProductOutput {
   bulletFeatures: string[];
   longDescription: string;
   score?: ContentScore;
+  id?: string;
 }
 
 export async function generateProductDescription(
@@ -86,17 +87,17 @@ IMPORTANT: Return ONLY valid JSON, no additional text or markdown formatting.`;
   output.score = score;
 
   // Save to database
-  await prisma.content.create({
+  const content = await prisma.content.create({
     data: {
       userId,
       contentType: "product",
       title: input.productName,
-      body: output.longDescription,
+      body: JSON.stringify(output),
       status: "COMPLETE",
       inputData: input as any,
       generatedOutput: output as any,
     },
   });
 
-  return output;
+  return { ...output, id: content.id };
 }

@@ -8,8 +8,78 @@ const getAuthToken = (): string | null => {
   return localStorage.getItem("accessToken");
 };
 
+export interface ContentScore {
+  total: number;
+  readability: number;
+  seo: number;
+  engagement: number;
+  details?: {
+    readabilityFeedback: string;
+    seoFeedback: string;
+    engagementFeedback: string;
+  };
+}
+
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  message?: string;
+  data: T;
+  error?: string;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+  };
+}
+
+export interface BlogContent {
+  id: string;
+  title: string;
+  body: string;
+  content: string; // compatibility with old code
+  score: ContentScore;
+}
+
+export interface AdVariant {
+  headline: string;
+  primaryText: string;
+  cta: string;
+  tags?: string[];
+}
+
+export interface AdContent {
+  id: string;
+  platform: string;
+  variants: AdVariant[];
+  score: ContentScore;
+}
+
+export interface ProductContent {
+  id: string;
+  headline: string;
+  bullets: string[];
+  shortDesc: string;
+  longDesc: string;
+  score: ContentScore;
+}
+
+export interface ContentVersion {
+  id: string;
+  contentId: string;
+  versionNumber: number;
+  body: string;
+  improvementType: string | null;
+  scores: ContentScore;
+  createdAt: string;
+}
+
 // Helper to handle API responses
-const handleResponse = async (response: Response) => {
+const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
   const data = await response.json();
 
   if (!response.ok) {
@@ -23,14 +93,14 @@ const handleResponse = async (response: Response) => {
 // AUTHENTICATION
 // ============================================
 
-export const signup = async (data: any) => {
+export const signup = async (data: Record<string, string>) => {
   const response = await fetch(`${API_BASE_URL}/auth/signup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
 
-  const result = await handleResponse(response);
+  const result = await handleResponse<AuthResponse>(response);
 
   if (result.success && result.data) {
     localStorage.setItem("accessToken", result.data.accessToken);
@@ -41,14 +111,14 @@ export const signup = async (data: any) => {
   return result;
 };
 
-export const login = async (data: any) => {
+export const login = async (data: Record<string, string>) => {
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
 
-  const result = await handleResponse(response);
+  const result = await handleResponse<AuthResponse>(response);
 
   if (result.success && result.data) {
     localStorage.setItem("accessToken", result.data.accessToken);
@@ -98,7 +168,7 @@ export const generateBlog = async (data: {
     body: JSON.stringify(data),
   });
 
-  return handleResponse(response);
+  return handleResponse<BlogContent>(response);
 };
 
 export const generateAd = async (data: {
@@ -119,7 +189,7 @@ export const generateAd = async (data: {
     body: JSON.stringify(data),
   });
 
-  return handleResponse(response);
+  return handleResponse<AdContent>(response);
 };
 
 export const generateProduct = async (data: {
@@ -140,14 +210,21 @@ export const generateProduct = async (data: {
     body: JSON.stringify(data),
   });
 
-  return handleResponse(response);
+  return handleResponse<ProductContent>(response);
 };
 
 // ============================================
 // CONTENT MANAGEMENT
 // ============================================
 
-export const getMyContent = async (filters?: any) => {
+export interface ContentFilters {
+  contentType?: string;
+  status?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export const getMyContent = async (filters?: ContentFilters) => {
   const token = getAuthToken();
   const params = new URLSearchParams();
 
@@ -182,6 +259,31 @@ export const deleteContent = async (contentId: string) => {
   });
 
   return handleResponse(response);
+};
+
+export const improveContent = async (contentId: string, mode: string) => {
+  const token = getAuthToken();
+
+  const response = await fetch(`${API_BASE_URL}/content/${contentId}/improve`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ mode }),
+  });
+
+  return handleResponse<ContentVersion>(response);
+};
+
+export const getContentVersions = async (contentId: string) => {
+  const token = getAuthToken();
+
+  const response = await fetch(`${API_BASE_URL}/content/${contentId}/versions`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  return handleResponse<ContentVersion[]>(response);
 };
 
 // ============================================

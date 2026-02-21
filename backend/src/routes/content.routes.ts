@@ -12,5 +12,7 @@ router.get("/", contentController.listContent);
 router.get("/:id", contentController.getContent);
 router.patch("/:id", contentController.updateContent);
 router.delete("/:id", contentController.deleteContent);
+router.post("/:id/improve", contentController.improveContent);
+router.get("/:id/versions", contentController.getContentVersions);
 
 export default router;

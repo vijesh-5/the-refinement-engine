@@ -15,14 +15,14 @@ export default function Signup() {
   const navigate = useNavigate();
 
   const mutation = useMutation({
-    mutationFn: (data: any) => signup(data),
+    mutationFn: (data: Record<string, string>) => signup(data),
     onSuccess: (result) => {
       if (result.success) {
         toast.success("Account created successfully!");
         navigate("/app");
       }
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || "Failed to create account");
     },
   });
