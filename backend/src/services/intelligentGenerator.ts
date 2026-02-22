@@ -36,14 +36,11 @@ class IntelligentGeneratorService {
     // 1. Writer Agent: Create the initial draft
     const writerOutput = await this.runWriterAgent(input);
 
-    // 2. SEO Critic Agent: Critique the draft for SEO
-    const seoFeedback = await this.runSEOCriticAgent(writerOutput, input);
-
-    // 3. Conversion Critic Agent: Critique the draft for conversion
-    const conversionFeedback = await this.runConversionCriticAgent(
-      writerOutput,
-      input,
-    );
+    // 2 & 3. SEO + Conversion Critics run in PARALLEL — both only need the draft
+    const [seoFeedback, conversionFeedback] = await Promise.all([
+      this.runSEOCriticAgent(writerOutput, input),
+      this.runConversionCriticAgent(writerOutput, input),
+    ]);
 
     // 4. Synthesizer Agent: Final polished output
     const finalResult = await this.runSynthesizerAgent(

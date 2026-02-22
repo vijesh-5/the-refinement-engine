@@ -21,6 +21,7 @@ model User {
   contents      Content[]
   refreshTokens RefreshToken[]
   brandProfiles BrandProfile[]
+  topicSuggestions TopicSuggestion[]
 
   @@index([email])
   @@map("users")
@@ -152,4 +153,21 @@ model RefreshToken {
   @@index([token])
   @@index([expiresAt])
   @@map("refresh_tokens")
+}
+
+model TopicSuggestion {
+  id              String   @id @default(uuid())
+  userId          String
+  brandProfileId  String?
+  sourceTopic     String   // The topic that triggered the suggestions
+  suggestions     Json     // String[] of related topic ideas
+  contentType     String   @default("blog")
+
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("topic_suggestions")
 }

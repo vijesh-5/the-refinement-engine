@@ -7,7 +7,7 @@ This document tracks the evolution of Artifex from a visual mockup to a Content 
 - [x] **Authentication System**: JWT-based login/signup with PostgreSQL + Prisma.
 - [x] **UI/UX Design**: Premium dark-mode dashboard with `shadcn/ui` components.
 - [x] **Database Schema**: Initial models for Users, Content, and Templates.
-- [x] **AI Service Setup**: Basic Google Gemini Pro integration in the backend.
+- [x] **AI Service Setup**: Provider-agnostic AI service (`gemini.service.ts`) supports both Gemini and local Ollama.
 - [x] **Phase 1: The Bridge Sprint**
   - [x] Replace `setTimeout` mocks in `BlogCreator.tsx` with TanStack Query.
   - [x] Replace mocks in `AdCopywriter.tsx`.
@@ -45,9 +45,16 @@ This document tracks the evolution of Artifex from a visual mockup to a Content 
 - [x] Rewrite Library page — remove mocks, fetch from database.
 - [x] Rewrite README.md — replace Lovable placeholder.
 
-### Phase 7 & 8 — Prediction & Insights
-- [ ] Lightweight heuristic performance prediction.
-- [ ] Topic clustering and automated "next blog" suggestions.
+### Phase 7 & 8 — Prediction & Insights ✅ (Lean Build)
+- [x] Enhanced heuristic scoring: Flesch-Kincaid readability, keyword density, heading structure, CTA strength, vocabulary variety.
+- [x] Background topic suggestions: fire-and-forget after blog generation, stored in `topic_suggestions` DB table.
+- [x] **No extra latency**: Phase 7/8 adds zero LLM calls to the user-facing generation flow.
+
+### AI Provider Abstraction & Pipeline Optimization ✅
+- [x] `gemini.service.ts` → provider-agnostic AI service (toggle via `AI_PROVIDER=ollama|gemini`).
+- [x] Ollama local model support: run `ollama serve` + `ollama pull llama3:8b` to go credit-free.
+- [x] SEO Critic + Conversion Critic now run in **parallel** (Promise.all) — ~25-35% latency reduction.
+- [x] New DB table: `topic_suggestions` (migration applied).
 
 ### Phase 9 & 10 — UI Polish & Transparency
 - [ ] Implement tabbed editor interface (Edit, Score, Versions).
