@@ -128,6 +128,7 @@ export default function Templates() {
 
   return (
     <AppLayout>
+      <div className="app-content">
       <div className="page-header">
         <h1 className="page-title">Templates</h1>
         <p className="page-description">Start with proven frameworks that convert</p>
@@ -236,6 +237,7 @@ export default function Templates() {
           </Button>
         </CardContent>
       </Card>
+      </div>
     </AppLayout>
   );
 }

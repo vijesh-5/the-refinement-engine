@@ -62,8 +62,8 @@ This document tracks the evolution of Artifex from a visual mockup to a Content 
 - [x] Export to `.md` and `.txt` formats.
 - [x] Saved content re-opens in its original generator via Library → "Open in Editor".
 
-### Phase 10 — Transparency
-- [ ] Add reasoning summary toggle for AI transparency.
+### Phase 10 — Transparency ✅
+- [x] Add reasoning summary toggle for AI transparency.
 
 ---
 

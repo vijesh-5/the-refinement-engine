@@ -6,12 +6,10 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="h-screen bg-background flex overflow-hidden">
       <AppSidebar />
-      <main className="flex-1 ml-64 min-h-screen">
-        <div className="app-content">
-          {children}
-        </div>
+      <main className="flex-1 ml-64 h-screen overflow-hidden">
+        {children}
       </main>
     </div>
   );

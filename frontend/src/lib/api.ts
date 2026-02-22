@@ -43,6 +43,9 @@ export interface BlogContent {
   body: string;
   content: string; // compatibility with old code
   score: ContentScore;
+  seoInsights?: string;
+  conversionInsights?: string;
+  reasoningSummary?: string;
 }
 
 export interface AdVariant {
@@ -57,6 +60,7 @@ export interface AdContent {
   platform: string;
   variants: AdVariant[];
   score: ContentScore;
+  reasoningSummary?: string;
 }
 
 export interface ProductContent {
@@ -66,6 +70,7 @@ export interface ProductContent {
   shortDesc: string;
   longDesc: string;
   score: ContentScore;
+  reasoningSummary?: string;
 }
 
 export interface ContentVersion {
