@@ -2,6 +2,7 @@ import { prisma } from "../config/database";
 import { intelligentGeneratorService } from "./intelligentGenerator";
 import { scoringService, ContentScore } from "./scoring.service";
 import { competitorService } from "./competitor.service";
+import { topicSuggestionService } from "./topic.service";
 
 interface BlogInput {
   topic: string;
@@ -87,6 +88,16 @@ export async function generateBlog(
       generatedOutput: output as any,
     },
   });
+
+  // Fire-and-forget: generate topic suggestions in the background.
+  // No await — this never blocks the main response.
+  void topicSuggestionService.generateSuggestions(
+    userId,
+    input.topic,
+    output.content,
+    "blog",
+    input.brandId,
+  );
 
   return { ...output, id: content.id };
 }
