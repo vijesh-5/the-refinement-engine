@@ -1,7 +1,9 @@
-import express, { Application } from "express";
+import express, { Application, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { env } from "./config/env";
+import { logger } from "./config/logger";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
+import { globalLimiter, generationLimiter } from "./middleware/rateLimiter";
 import healthRoutes from "./routes/health.routes";
 import authRoutes from "./routes/auth.routes";
 import contentRoutes from "./routes/content.routes";
@@ -26,8 +28,22 @@ export function createApp(): Application {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  // Global rate limiter
+  app.use(globalLimiter);
+
+  // Request logging
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const start = Date.now();
+    res.on("finish", () => {
+      const duration = Date.now() - start;
+      const level = res.statusCode >= 400 ? "warn" : "info";
+      logger[level]("HTTP", `${req.method} ${req.path} ${res.statusCode}`, { durationMs: duration });
+    });
+    next();
+  });
+
   // Routes
-  app.get("/", (req, res) => {
+  app.get("/", (_req, res) => {
     res.status(200).json({
       success: true,
       message: "Welcome to Artifex API",
@@ -46,7 +62,7 @@ export function createApp(): Application {
 
   app.use("/api/health", healthRoutes);
   app.use("/api/auth", authRoutes);
-  app.use("/api/generate", generateRoutes);
+  app.use("/api/generate", generationLimiter, generateRoutes);
   app.use("/api/content", contentRoutes);
   app.use("/api/templates", templateRoutes);
   app.use("/api/dashboard", dashboardRoutes);
