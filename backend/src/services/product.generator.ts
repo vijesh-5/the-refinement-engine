@@ -17,6 +17,7 @@ interface ProductOutput {
   shortDescription: string;
   bulletFeatures: string[];
   longDescription: string;
+  reasoningSummary?: string;
   score?: ContentScore;
   id?: string;
 }
@@ -88,7 +89,8 @@ Return the response in the following JSON format:
     "Key feature 4 with benefit",
     "Key feature 5 with benefit"
   ],
-  "longDescription": "Detailed, persuasive product description that tells the complete story and drives conversions"
+  "longDescription": "Detailed, persuasive product description that tells the complete story and drives conversions",
+  "reasoningSummary": "Brief professional explanation of your copywriting strategy: how you ordered the benefit hierarchy, which persuasion techniques you used, and how the tone targets the specific audience"
 }
 
 IMPORTANT: Return ONLY valid JSON, no additional text or markdown formatting.`;

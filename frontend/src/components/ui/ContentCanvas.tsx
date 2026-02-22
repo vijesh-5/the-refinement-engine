@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
+import { ReasoningPanel, ReasoningData } from "@/components/ui/ReasoningPanel";
 import { stripMarkdown } from "@/lib/markdown";
 import { Button } from "@/components/ui/button";
 import { SaveContentButton } from "@/components/ui/SaveContentButton";
@@ -38,6 +39,8 @@ interface ContentCanvasProps {
   contentId?: string | null;
   /** Placeholder state when no content has been generated yet */
   emptyState?: React.ReactNode;
+  /** Optional: AI reasoning data for transparency panel */
+  reasoningData?: ReasoningData;
 }
 
 export function ContentCanvas({
@@ -47,6 +50,7 @@ export function ContentCanvas({
   onToggleExpand,
   saveConfig,
   emptyState,
+  reasoningData,
 }: ContentCanvasProps) {
   const [mode, setMode] = useState<"preview" | "edit">("preview");
   const [copied, setCopied] = useState(false);
@@ -136,7 +140,7 @@ export function ContentCanvas({
 
   // ─── Canvas with content ───────────────────────────────────────────
   return (
-    <div className="flex-1 flex flex-col bg-background min-w-0">
+    <div className="flex-1 flex flex-col bg-background min-w-0 overflow-hidden">
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border-subtle bg-background-elevated/50 shrink-0">
         <div className="flex items-center gap-4">
@@ -241,26 +245,47 @@ export function ContentCanvas({
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 min-h-0">
         {mode === "preview" ? (
-          <div className="max-w-3xl mx-auto p-8 md:p-12">
-            <div className="prose prose-invert prose-headings:text-foreground prose-p:text-foreground-muted prose-strong:text-foreground prose-blockquote:border-primary prose-blockquote:text-foreground-muted max-w-none">
-              <MarkdownRenderer content={content} />
+          <div className="h-full overflow-y-auto">
+            <div className="max-w-3xl mx-auto p-8 md:p-12">
+              <div className="prose prose-invert prose-headings:text-foreground prose-p:text-foreground-muted prose-strong:text-foreground prose-blockquote:border-primary prose-blockquote:text-foreground-muted max-w-none">
+                <MarkdownRenderer content={content} />
+              </div>
             </div>
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto p-6 md:p-10">
-            <textarea
-              ref={textareaRef}
-              value={content}
-              onChange={(e) => onContentChange(e.target.value)}
-              className="w-full min-h-[60vh] bg-transparent text-foreground-muted leading-relaxed text-sm font-mono resize-none outline-none border border-border-subtle rounded-xl p-6 focus:border-primary/50 transition-colors"
-              placeholder="Start editing your content..."
-              spellCheck
-            />
+          /* Edit mode: side-by-side editor + live preview */
+          <div className="flex h-full">
+            {/* Editor pane */}
+            <div className="flex-1 border-r border-border-subtle overflow-y-auto">
+              <div className="p-6">
+                <div className="text-[10px] uppercase tracking-wider text-foreground-subtle mb-3 font-semibold">Markdown Source</div>
+                <textarea
+                  ref={textareaRef}
+                  value={content}
+                  onChange={(e) => onContentChange(e.target.value)}
+                  className="w-full min-h-[200px] bg-transparent text-foreground-muted leading-relaxed text-sm font-mono resize-none outline-none"
+                  placeholder="Start editing your content..."
+                  spellCheck
+                />
+              </div>
+            </div>
+            {/* Live preview pane */}
+            <div className="flex-1 overflow-y-auto bg-background-surface/30">
+              <div className="p-6">
+                <div className="text-[10px] uppercase tracking-wider text-foreground-subtle mb-3 font-semibold">Live Preview</div>
+                <div className="prose prose-invert prose-sm prose-headings:text-foreground prose-p:text-foreground-muted prose-strong:text-foreground max-w-none">
+                  <MarkdownRenderer content={content} />
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
+
+      {/* AI Reasoning Panel */}
+      {reasoningData && <ReasoningPanel data={reasoningData} />}
     </div>
   );
 }

@@ -21,6 +21,7 @@ interface AdVariant {
 interface AdOutput {
   platform: string;
   variants: AdVariant[];
+  reasoningSummary?: string;
   score?: ContentScore;
   id?: string;
 }
@@ -119,7 +120,8 @@ Return the response in the following JSON format:
       "primaryText": "Yet another compelling approach",
       "cta": "Third CTA option"
     }
-  ]
+  ],
+  "reasoningSummary": "Brief professional explanation of your copywriting strategy: which psychological angles you chose, why specific CTAs were selected, and how the copy targets the audience's pain points"
 }
 
 IMPORTANT: Return ONLY valid JSON, no additional text or markdown formatting.`;

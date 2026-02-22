@@ -79,6 +79,7 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
+      <div className="app-content">
       {/* Header */}
       <div className="page-header">
         <h1 className="page-title">Welcome back, {userName}</h1>
@@ -190,6 +191,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </section>
+      </div>
     </AppLayout>
   );
 }

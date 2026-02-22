@@ -146,6 +146,7 @@ export default function BrandProfiles() {
 
   return (
     <AppLayout>
+      <div className="app-content">
       <div className="page-header flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="page-title">Brand Identity Memory</h1>
@@ -326,6 +327,7 @@ export default function BrandProfiles() {
             </Card>
           ))
         )}
+      </div>
       </div>
     </AppLayout>
   );

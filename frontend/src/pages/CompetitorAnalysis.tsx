@@ -92,7 +92,7 @@ export default function CompetitorAnalysis() {
 
   return (
     <AppLayout>
-      <div className="flex h-[calc(100vh-0px)]">
+      <div className="flex h-full overflow-hidden">
         {/* Left Panel - Controls */}
         <div className="w-[400px] border-r border-border-subtle flex flex-col bg-background-elevated/30">
           {/* Header */}

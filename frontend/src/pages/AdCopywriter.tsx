@@ -9,6 +9,7 @@ import { stripMarkdown } from "@/lib/markdown";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { generateAd, improveContent, getContentVersions, getBrands, getContentItem, AdContent, AdVariant, ContentVersion, BrandProfile } from "@/lib/api";
 import { SaveContentButton } from "@/components/ui/SaveContentButton";
+import { ReasoningPanel, ReasoningData } from "@/components/ui/ReasoningPanel";
 import { toast } from "sonner";
 import { 
   Zap,
@@ -78,6 +79,7 @@ export default function AdCopywriter() {
   const [selectedTone, setSelectedTone] = useState("Professional");
   const [variations, setVariations] = useState<AdVariant[]>([]);
   const [currentContentId, setCurrentContentId] = useState<string | null>(null);
+  const [reasoningData, setReasoningData] = useState<ReasoningData | undefined>(undefined);
   const [versions, setVersions] = useState<ContentVersion[]>([]);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [selectedBrandId, setSelectedBrandId] = useState<string>("none");
@@ -138,6 +140,9 @@ export default function AdCopywriter() {
       if (result.success && result.data) {
         setVariations(result.data.variants || []);
         setCurrentContentId(result.data.id || null);
+        setReasoningData({
+          reasoningSummary: result.data.reasoningSummary,
+        });
         toast.success("Ad variations generated successfully!");
         if (result.data.id) {
           fetchVersions(result.data.id);
@@ -240,18 +245,18 @@ export default function AdCopywriter() {
 
   return (
     <AppLayout>
-      <div className="flex h-[calc(100vh-0px)]">
+      <div className="flex h-full overflow-hidden">
         {/* Left Panel - Performance Lab Controls */}
-        <div className={`w-80 border-r border-border-subtle bg-gradient-to-b from-background-elevated to-background flex flex-col shrink-0 transition-all duration-300 ${canvasExpanded ? "hidden" : ""}`}>
+        <div className={`border-r border-border-subtle bg-gradient-to-b from-background-elevated to-background flex flex-col shrink-0 transition-all duration-300 ease-in-out ${canvasExpanded ? "w-0 overflow-hidden opacity-0 border-r-0" : "w-80 opacity-100"}`}>
           {/* Header */}
-          <div className="p-6 border-b border-border-subtle">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-blue-400" />
+          <div className="px-4 py-4 border-b border-border-subtle">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                <Zap className="w-4 h-4 text-blue-400" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold">Ad Copywriter</h2>
-                <p className="text-xs text-foreground-muted">Performance Lab</p>
+                <h2 className="text-sm font-semibold">Ad Copywriter</h2>
+                <p className="text-[10px] text-foreground-muted">Performance Lab</p>
               </div>
             </div>
           </div>
@@ -476,7 +481,7 @@ export default function AdCopywriter() {
           </div>
 
           {/* Generate Button */}
-          <div className="p-4 border-t border-border-subtle">
+          <div className="sticky bottom-0 p-4 border-t border-border-subtle bg-background-elevated">
             <Button 
               className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400" 
               size="lg"
@@ -502,7 +507,8 @@ export default function AdCopywriter() {
         </div>
 
         {/* Right Panel - Variations Grid */}
-        <div className="flex-1 bg-background overflow-y-auto">
+        <div className="flex-1 flex flex-col bg-background min-w-0">
+          <div className="flex-1 overflow-y-auto">
           {variations.length > 0 ? (
             <div className="p-6 md:p-8">
               {/* Header */}
@@ -650,6 +656,9 @@ export default function AdCopywriter() {
               </div>
             </div>
           )}
+          </div>
+          {/* AI Reasoning Panel */}
+          {reasoningData && <ReasoningPanel data={reasoningData} />}
         </div>
       </div>
     </AppLayout>

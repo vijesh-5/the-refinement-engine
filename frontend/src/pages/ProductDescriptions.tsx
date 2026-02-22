@@ -9,6 +9,7 @@ import { stripMarkdown } from "@/lib/markdown";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { generateProduct, improveContent, getContentVersions, getBrands, getContentItem, ProductContent, ContentVersion, BrandProfile } from "@/lib/api";
 import { SaveContentButton } from "@/components/ui/SaveContentButton";
+import { ReasoningPanel, ReasoningData } from "@/components/ui/ReasoningPanel";
 import { toast } from "sonner";
 import { 
   Sparkles,
@@ -53,6 +54,7 @@ export default function ProductDescriptions() {
   const [tone, setTone] = useState("Premium");
   const [generatedContent, setGeneratedContent] = useState<ProductContent | null>(null);
   const [currentContentId, setCurrentContentId] = useState<string | null>(null);
+  const [reasoningData, setReasoningData] = useState<ReasoningData | undefined>(undefined);
   const [versions, setVersions] = useState<ContentVersion[]>([]);
   const [openSection, setOpenSection] = useState<string>("");
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
@@ -118,6 +120,9 @@ export default function ProductDescriptions() {
       if (result.success && result.data) {
         setGeneratedContent(result.data);
         setCurrentContentId(result.data.id || null);
+        setReasoningData({
+          reasoningSummary: result.data.reasoningSummary,
+        });
         toast.success("Product description generated successfully!");
         if (result.data.id) {
           fetchVersions(result.data.id);
@@ -235,18 +240,18 @@ export default function ProductDescriptions() {
 
   return (
     <AppLayout>
-      <div className="flex h-[calc(100vh-0px)]">
+      <div className="flex h-full overflow-hidden">
         {/* Left Panel - Conversion Engine Controls */}
-        <div className={`w-96 border-r border-border-subtle bg-gradient-to-b from-background-elevated to-background flex flex-col shrink-0 transition-all duration-300 ${canvasExpanded ? "hidden" : ""}`}>
+        <div className={`border-r border-border-subtle bg-gradient-to-b from-background-elevated to-background flex flex-col shrink-0 transition-all duration-300 ease-in-out ${canvasExpanded ? "w-0 overflow-hidden opacity-0 border-r-0" : "w-96 opacity-100"}`}>
           {/* Header */}
-          <div className="p-6 border-b border-border-subtle">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
-                <ShoppingBag className="w-5 h-5 text-green-400" />
+          <div className="px-4 py-4 border-b border-border-subtle">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                <ShoppingBag className="w-4 h-4 text-green-400" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold">Product Descriptions</h2>
-                <p className="text-xs text-foreground-muted">Conversion Engine</p>
+                <h2 className="text-sm font-semibold">Product Descriptions</h2>
+                <p className="text-[10px] text-foreground-muted">Conversion Engine</p>
               </div>
             </div>
           </div>
@@ -501,7 +506,7 @@ export default function ProductDescriptions() {
           </div>
 
           {/* Generate Button */}
-          <div className="p-4 border-t border-border-subtle">
+          <div className="sticky bottom-0 p-4 border-t border-border-subtle bg-background-elevated">
             <Button 
               className="w-full bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400" 
               size="lg"
@@ -524,7 +529,8 @@ export default function ProductDescriptions() {
         </div>
 
         {/* Right Panel - Structured Output */}
-        <div className="flex-1 bg-background overflow-y-auto">
+        <div className="flex-1 flex flex-col bg-background min-w-0">
+          <div className="flex-1 overflow-y-auto">
           {generatedContent ? (
             <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-6">
               {/* Expand/Collapse Button */}
@@ -724,6 +730,9 @@ export default function ProductDescriptions() {
               </div>
             </div>
           )}
+          </div>
+          {/* AI Reasoning Panel */}
+          {reasoningData && <ReasoningPanel data={reasoningData} />}
         </div>
       </div>
     </AppLayout>

@@ -33,6 +33,7 @@ export default function Settings() {
 
   return (
     <AppLayout>
+      <div className="app-content">
       <div className="page-header">
         <h1 className="page-title">Settings</h1>
         <p className="page-description">Manage your account and preferences</p>
@@ -317,6 +318,7 @@ export default function Settings() {
             </div>
           )}
         </div>
+      </div>
       </div>
     </AppLayout>
   );

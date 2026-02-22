@@ -4,6 +4,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ContentCanvas } from "@/components/ui/ContentCanvas";
+import { ReasoningData } from "@/components/ui/ReasoningPanel";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { generateBlog, improveContent, getContentVersions, getBrands, getContentItem, BlogContent, ContentVersion, BrandProfile } from "@/lib/api";
 import { toast } from "sonner";
@@ -77,6 +78,7 @@ export default function BlogCreator() {
   const [selectedBrandId, setSelectedBrandId] = useState<string>("none");
   const [versions, setVersions] = useState<ContentVersion[]>([]);
   const [canvasExpanded, setCanvasExpanded] = useState(false);
+  const [reasoningData, setReasoningData] = useState<ReasoningData | undefined>(undefined);
 
   const [searchParams] = useSearchParams();
   const loadContentId = searchParams.get("id");
@@ -125,6 +127,11 @@ export default function BlogCreator() {
     onSuccess: (result) => {
       if (result.success && result.data) {
         setGeneratedContent(result.data.content);
+        setReasoningData({
+          reasoningSummary: result.data.reasoningSummary,
+          seoInsights: result.data.seoInsights,
+          conversionInsights: result.data.conversionInsights,
+        });
         if (result.data.id) {
           fetchVersions(result.data.id);
           setCurrentContentId(result.data.id);
@@ -210,18 +217,18 @@ export default function BlogCreator() {
 
   return (
     <AppLayout>
-      <div className="flex h-[calc(100vh-0px)]">
+      <div className="flex h-full overflow-hidden">
         {/* Left Panel - Editorial Studio Controls */}
-        <div className={`w-80 border-r border-border-subtle bg-gradient-to-b from-background-elevated to-background flex flex-col shrink-0 transition-all duration-300 ${canvasExpanded ? "hidden" : ""}`}>
+        <div className={`border-r border-border-subtle bg-gradient-to-b from-background-elevated to-background flex flex-col shrink-0 transition-all duration-300 ease-in-out ${canvasExpanded ? "w-0 overflow-hidden opacity-0 border-r-0" : "w-80 opacity-100"}`}>
           {/* Header */}
-          <div className="p-6 border-b border-border-subtle">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-purple-400" />
+          <div className="px-4 py-4 border-b border-border-subtle">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                <BookOpen className="w-4 h-4 text-purple-400" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold">Blog Creator</h2>
-                <p className="text-xs text-foreground-muted">Editorial Studio</p>
+                <h2 className="text-sm font-semibold">Blog Creator</h2>
+                <p className="text-[10px] text-foreground-muted">Editorial Studio</p>
               </div>
             </div>
           </div>
@@ -454,7 +461,7 @@ export default function BlogCreator() {
           </div>
 
           {/* Generate Button */}
-          <div className="p-4 border-t border-border-subtle">
+          <div className="sticky bottom-0 p-4 border-t border-border-subtle bg-background-elevated">
             <Button 
               className="w-full" 
               size="lg"
@@ -490,6 +497,7 @@ export default function BlogCreator() {
               getInputData: () => ({ topic, audience, angle, keyword, wordCount, tone, brandId: selectedBrandId !== "none" ? selectedBrandId : undefined }),
             }}
             contentId={currentContentId}
+            reasoningData={reasoningData}
             emptyState={
               <div className="h-full flex items-center justify-center p-8">
                 <div className="text-center max-w-md">

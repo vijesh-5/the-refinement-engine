@@ -125,6 +125,7 @@ export default function Library() {
 
   return (
     <AppLayout>
+      <div className="app-content">
       <div className="page-header flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="page-title">My Content</h1>
@@ -341,6 +342,7 @@ export default function Library() {
           </Button>
         </div>
       )}
+      </div>
     </AppLayout>
   );
 }
