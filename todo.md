@@ -56,8 +56,13 @@ This document tracks the evolution of Artifex from a visual mockup to a Content 
 - [x] SEO Critic + Conversion Critic now run in **parallel** (Promise.all) — ~25-35% latency reduction.
 - [x] New DB table: `topic_suggestions` (migration applied).
 
-### Phase 9 & 10 — UI Polish & Transparency
-- [ ] Implement tabbed editor interface (Edit, Score, Versions).
+### Phase 9 — UI Polish & Canvas Editor ✅
+- [x] Canvas editor with edit/preview toggle, inline markdown editing, word count, read time.
+- [x] Expand/collapse: hides input panel to give canvas full width.
+- [x] Export to `.md` and `.txt` formats.
+- [x] Saved content re-opens in its original generator via Library → "Open in Editor".
+
+### Phase 10 — Transparency
 - [ ] Add reasoning summary toggle for AI transparency.
 
 ---

@@ -3,7 +3,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listContent, deleteContentItem, ContentItem } from "@/lib/api";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ import {
   Plus,
   Loader2,
   Layers,
+  ExternalLink,
 } from "lucide-react";
 
 type ContentType = "all" | "blog" | "ad" | "product";
@@ -70,6 +71,16 @@ export default function Library() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const getEditorPath = (item: ContentItem) => {
+    const routes: Record<string, string> = {
+      blog: "/app/blog",
+      ad: "/app/ads",
+      product: "/app/products",
+    };
+    return `${routes[item.contentType] || "/app/blog"}?id=${item.id}`;
+  };
 
   // Fetch content from the database
   const { data: contentResponse, isLoading } = useQuery({
@@ -209,6 +220,13 @@ export default function Library() {
                       {activeMenu === item.id && (
                         <div className="absolute right-0 top-10 w-44 py-2 rounded-xl bg-popover border border-border-subtle shadow-lg z-10">
                           <button
+                            onClick={() => { navigate(getEditorPath(item)); setActiveMenu(null); }}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground-muted hover:bg-background-hover transition-colors"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                            Open in Editor
+                          </button>
+                          <button
                             onClick={() => handleCopy(item)}
                             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground-muted hover:bg-background-hover transition-colors"
                           >
@@ -286,6 +304,9 @@ export default function Library() {
                   </span>
 
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button variant="ghost" size="icon-sm" onClick={() => navigate(getEditorPath(item))} title="Open in Editor">
+                      <ExternalLink className="w-4 h-4" />
+                    </Button>
                     <Button variant="ghost" size="icon-sm" onClick={() => handleCopy(item)}>
                       <Copy className="w-4 h-4" />
                     </Button>

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
 import { stripMarkdown } from "@/lib/markdown";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { generateAd, improveContent, getContentVersions, getBrands, AdContent, AdVariant, ContentVersion, BrandProfile } from "@/lib/api";
+import { generateAd, improveContent, getContentVersions, getBrands, getContentItem, AdContent, AdVariant, ContentVersion, BrandProfile } from "@/lib/api";
 import { SaveContentButton } from "@/components/ui/SaveContentButton";
 import { toast } from "sonner";
 import { 
@@ -27,7 +28,9 @@ import {
   Briefcase,
   ThumbsUp,
   AlertTriangle,
-  History as HistoryIcon
+  History as HistoryIcon,
+  Maximize2,
+  Minimize2
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
@@ -79,6 +82,43 @@ export default function AdCopywriter() {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [selectedBrandId, setSelectedBrandId] = useState<string>("none");
   const [openSection, setOpenSection] = useState<string>("platform");
+  const [canvasExpanded, setCanvasExpanded] = useState(false);
+
+  const [searchParams] = useSearchParams();
+  const loadContentId = searchParams.get("id");
+
+  // Load saved content when ?id= param is present
+  useEffect(() => {
+    if (!loadContentId) return;
+    getContentItem(loadContentId).then((res) => {
+      if (res.success && res.data) {
+        const item = res.data;
+        setCurrentContentId(item.id);
+        // Try to parse body as JSON (ad variants)
+        try {
+          const parsed = JSON.parse(item.body || "[]");
+          if (Array.isArray(parsed)) setVariations(parsed);
+        } catch {
+          // If body is not JSON, build a single variant from the body text
+          if (item.body) {
+            setVariations([{ headline: item.title, primaryText: item.body, cta: "Learn More", tags: [] }]);
+          }
+        }
+        const input = (item as any).inputData;
+        if (input) {
+          if (input.product) setProduct(input.product);
+          if (input.audience) setAudience(input.audience);
+          if (input.benefit) setBenefit(input.benefit);
+          if (input.tone) setSelectedTone(input.tone);
+          if (input.platform) setSelectedPlatform(input.platform);
+          if (input.brandId) setSelectedBrandId(input.brandId);
+        }
+        fetchVersions(item.id);
+      }
+    }).catch(() => {
+      toast.error("Failed to load saved content");
+    });
+  }, [loadContentId]);
 
   const { data: brands } = useQuery({
     queryKey: ["brands"],
@@ -202,7 +242,7 @@ export default function AdCopywriter() {
     <AppLayout>
       <div className="flex h-[calc(100vh-0px)]">
         {/* Left Panel - Performance Lab Controls */}
-        <div className="w-80 border-r border-border-subtle bg-gradient-to-b from-background-elevated to-background flex flex-col">
+        <div className={`w-80 border-r border-border-subtle bg-gradient-to-b from-background-elevated to-background flex flex-col shrink-0 transition-all duration-300 ${canvasExpanded ? "hidden" : ""}`}>
           {/* Header */}
           <div className="p-6 border-b border-border-subtle">
             <div className="flex items-center gap-3 mb-2">
@@ -467,11 +507,22 @@ export default function AdCopywriter() {
             <div className="p-6 md:p-8">
               {/* Header */}
               <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-lg font-semibold mb-1">Generated Variations</h3>
-                  <p className="text-sm text-foreground-muted">
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCanvasExpanded(!canvasExpanded)}
+                    className="text-foreground-muted"
+                    title={canvasExpanded ? "Show input panel" : "Expand canvas"}
+                  >
+                    {canvasExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                  </Button>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-1">Generated Variations</h3>
+                    <p className="text-sm text-foreground-muted">
                     {variations.length} variations for {platforms.find(p => p.id === selectedPlatform)?.name}
-                  </p>
+                    </p>
+                  </div>
                 </div>
                 <Button variant="outline" size="sm" onClick={handleGenerate}>
                   <RefreshCw className="w-4 h-4" />

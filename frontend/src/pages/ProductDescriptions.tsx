@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
 import { stripMarkdown } from "@/lib/markdown";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { generateProduct, improveContent, getContentVersions, getBrands, ProductContent, ContentVersion, BrandProfile } from "@/lib/api";
+import { generateProduct, improveContent, getContentVersions, getBrands, getContentItem, ProductContent, ContentVersion, BrandProfile } from "@/lib/api";
 import { SaveContentButton } from "@/components/ui/SaveContentButton";
 import { toast } from "sonner";
 import { 
@@ -29,7 +30,9 @@ import {
   ChevronDown,
   ChevronUp,
   RotateCcw,
-  Briefcase
+  Briefcase,
+  Maximize2,
+  Minimize2
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
@@ -54,6 +57,48 @@ export default function ProductDescriptions() {
   const [openSection, setOpenSection] = useState<string>("");
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
   const [selectedBrandId, setSelectedBrandId] = useState<string>("none");
+  const [canvasExpanded, setCanvasExpanded] = useState(false);
+
+  const [searchParams] = useSearchParams();
+  const loadContentId = searchParams.get("id");
+
+  // Load saved content when ?id= param is present
+  useEffect(() => {
+    if (!loadContentId) return;
+    getContentItem(loadContentId).then((res) => {
+      if (res.success && res.data) {
+        const item = res.data;
+        setCurrentContentId(item.id);
+        // Try to restore structured content from generatedOutput
+        const output = (item as any).generatedOutput;
+        if (output && output.headline) {
+          setGeneratedContent(output as ProductContent);
+        } else if (item.body) {
+          // Fallback: put body into longDesc
+          setGeneratedContent({
+            headline: item.title,
+            shortDesc: "",
+            longDesc: item.body,
+            bullets: [],
+            id: item.id,
+            score: { total: 0, readability: 0, seo: 0, engagement: 0, details: {} },
+          } as ProductContent);
+        }
+        const input = (item as any).inputData;
+        if (input) {
+          if (input.productName) setProductName(input.productName);
+          if (input.category) setCategory(input.category);
+          if (input.audience) setAudience(input.audience);
+          if (input.tone) setTone(input.tone);
+          if (input.brandId) setSelectedBrandId(input.brandId);
+          if (input.features && Array.isArray(input.features)) setFeatures(input.features);
+        }
+        fetchVersions(item.id);
+      }
+    }).catch(() => {
+      toast.error("Failed to load saved content");
+    });
+  }, [loadContentId]);
 
   const { data: brands } = useQuery({
     queryKey: ["brands"],
@@ -192,7 +237,7 @@ export default function ProductDescriptions() {
     <AppLayout>
       <div className="flex h-[calc(100vh-0px)]">
         {/* Left Panel - Conversion Engine Controls */}
-        <div className="w-96 border-r border-border-subtle bg-gradient-to-b from-background-elevated to-background flex flex-col">
+        <div className={`w-96 border-r border-border-subtle bg-gradient-to-b from-background-elevated to-background flex flex-col shrink-0 transition-all duration-300 ${canvasExpanded ? "hidden" : ""}`}>
           {/* Header */}
           <div className="p-6 border-b border-border-subtle">
             <div className="flex items-center gap-3 mb-2">
@@ -482,6 +527,19 @@ export default function ProductDescriptions() {
         <div className="flex-1 bg-background overflow-y-auto">
           {generatedContent ? (
             <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-6">
+              {/* Expand/Collapse Button */}
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCanvasExpanded(!canvasExpanded)}
+                  className="text-foreground-muted"
+                  title={canvasExpanded ? "Show input panel" : "Expand canvas"}
+                >
+                  {canvasExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                  <span className="ml-1.5 text-xs">{canvasExpanded ? "Show Inputs" : "Expand"}</span>
+                </Button>
+              </div>
               {/* Conversion Confidence Banner */}
               <Card className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/20">
                 <CardContent className="p-6">

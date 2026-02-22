@@ -1,12 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
-import { stripMarkdown } from "@/lib/markdown";
+import { ContentCanvas } from "@/components/ui/ContentCanvas";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { generateBlog, improveContent, getContentVersions, getBrands, BlogContent, ContentVersion, BrandProfile } from "@/lib/api";
-import { SaveContentButton } from "@/components/ui/SaveContentButton";
+import { generateBlog, improveContent, getContentVersions, getBrands, getContentItem, BlogContent, ContentVersion, BrandProfile } from "@/lib/api";
 import { toast } from "sonner";
 import { 
   ChevronDown, 
@@ -15,14 +14,9 @@ import {
   BookOpen,
   Target,
   Mic,
-  Copy,
-  Download,
-  RotateCcw,
-  Check,
   Wand2,
   AlignLeft,
   Hash,
-  Clock,
   History as HistoryIcon,
   TrendingUp,
   Zap,
@@ -32,6 +26,7 @@ import {
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
+
 
 interface CollapsibleSectionProps {
   title: string;
@@ -81,7 +76,36 @@ export default function BlogCreator() {
   const [currentContentId, setCurrentContentId] = useState<string | null>(null);
   const [selectedBrandId, setSelectedBrandId] = useState<string>("none");
   const [versions, setVersions] = useState<ContentVersion[]>([]);
-  const [copied, setCopied] = useState(false);
+  const [canvasExpanded, setCanvasExpanded] = useState(false);
+
+  const [searchParams] = useSearchParams();
+  const loadContentId = searchParams.get("id");
+
+  // Load saved content when ?id= param is present
+  useEffect(() => {
+    if (!loadContentId) return;
+    getContentItem(loadContentId).then((res) => {
+      if (res.success && res.data) {
+        const item = res.data;
+        setGeneratedContent(item.body || "");
+        setCurrentContentId(item.id);
+        // Restore input fields from saved inputData
+        const input = (item as any).inputData;
+        if (input) {
+          if (input.topic) setTopic(input.topic);
+          if (input.audience) setAudience(input.audience);
+          if (input.angle) setAngle(input.angle);
+          if (input.keyword) setKeyword(input.keyword);
+          if (input.wordCount) setWordCount(input.wordCount);
+          if (input.tone) setTone(input.tone);
+          if (input.brandId) setSelectedBrandId(input.brandId);
+        }
+        fetchVersions(item.id);
+      }
+    }).catch(() => {
+      toast.error("Failed to load saved content");
+    });
+  }, [loadContentId]);
 
   const { data: brands } = useQuery({
     queryKey: ["brands"],
@@ -174,12 +198,6 @@ export default function BlogCreator() {
     });
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(stripMarkdown(generatedContent));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   const metrics = mutation.data?.data?.score ? [
     { label: "SEO Score", value: mutation.data.data.score.seo, icon: Target },
     { label: "Readability", value: mutation.data.data.score.readability, icon: AlignLeft },
@@ -194,7 +212,7 @@ export default function BlogCreator() {
     <AppLayout>
       <div className="flex h-[calc(100vh-0px)]">
         {/* Left Panel - Editorial Studio Controls */}
-        <div className="w-80 border-r border-border-subtle bg-gradient-to-b from-background-elevated to-background flex flex-col">
+        <div className={`w-80 border-r border-border-subtle bg-gradient-to-b from-background-elevated to-background flex flex-col shrink-0 transition-all duration-300 ${canvasExpanded ? "hidden" : ""}`}>
           {/* Header */}
           <div className="p-6 border-b border-border-subtle">
             <div className="flex items-center gap-3 mb-2">
@@ -458,55 +476,21 @@ export default function BlogCreator() {
           </div>
         </div>
 
-        {/* Right Panel - Document Editor */}
-        <div className="flex-1 flex flex-col bg-background">
-          {/* Toolbar */}
-          <div className="flex items-center justify-between px-6 py-3 border-b border-border-subtle bg-background-elevated/50">
-            <div className="flex items-center gap-6">
-              {generatedContent && (
-                <>
-                  <div className="flex items-center gap-2 text-sm text-foreground-muted">
-                    <Clock className="w-4 h-4" />
-                    <span>~5 min read</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-foreground-muted">
-                    <AlignLeft className="w-4 h-4" />
-                    <span>1,247 words</span>
-                  </div>
-                </>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" disabled={!generatedContent} onClick={() => setGeneratedContent("")}>
-                <RotateCcw className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="sm" disabled={!generatedContent} onClick={handleCopy}>
-                {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
-              </Button>
-              <Button variant="outline" size="sm" disabled={!generatedContent}>
-                <Download className="w-4 h-4" />
-                Export
-              </Button>
-              <SaveContentButton
-                contentType="blog"
-                disabled={!generatedContent}
-                getTitle={() => topic || "Untitled Blog"}
-                getBody={() => generatedContent}
-                getGeneratedOutput={() => ({ content: generatedContent })}
-                getInputData={() => ({ topic, audience, angle, keyword, wordCount, tone, brandId: selectedBrandId !== "none" ? selectedBrandId : undefined })}
-              />
-            </div>
-          </div>
-
-          {/* Content Area */}
-          <div className="flex-1 overflow-y-auto">
-            {generatedContent ? (
-              <div className="max-w-3xl mx-auto p-8 md:p-12">
-                <div className="prose prose-invert prose-headings:text-foreground prose-p:text-foreground-muted prose-strong:text-foreground prose-blockquote:border-primary prose-blockquote:text-foreground-muted max-w-none">
-                  <MarkdownRenderer content={generatedContent} />
-                </div>
-              </div>
-            ) : (
+        {/* Right Panel — Canvas */}
+        <div className="flex-1 flex flex-col bg-background min-w-0">
+          <ContentCanvas
+            content={generatedContent}
+            onContentChange={setGeneratedContent}
+            isExpanded={canvasExpanded}
+            onToggleExpand={() => setCanvasExpanded(!canvasExpanded)}
+            saveConfig={{
+              contentType: "blog",
+              getTitle: () => topic || "Untitled Blog",
+              getGeneratedOutput: () => ({ content: generatedContent }),
+              getInputData: () => ({ topic, audience, angle, keyword, wordCount, tone, brandId: selectedBrandId !== "none" ? selectedBrandId : undefined }),
+            }}
+            contentId={currentContentId}
+            emptyState={
               <div className="h-full flex items-center justify-center p-8">
                 <div className="text-center max-w-md">
                   <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500/20 to-primary/10 border border-purple-500/20 flex items-center justify-center mx-auto mb-6">
@@ -526,8 +510,8 @@ export default function BlogCreator() {
                   </div>
                 </div>
               </div>
-            )}
-          </div>
+            }
+          />
 
           {/* Quality Indicators */}
           {generatedContent && (
