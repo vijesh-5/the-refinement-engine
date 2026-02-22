@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import { logger } from "./logger";
 
 dotenv.config();
 
@@ -28,10 +29,30 @@ const requiredEnvVars = [
 export function validateEnv(): void {
   const missing = requiredEnvVars.filter((key) => !env[key]);
 
+  // Conditional: GEMINI_API_KEY is required only when using Gemini provider
+  if (env.AI_PROVIDER === "gemini" && !env.GEMINI_API_KEY) {
+    missing.push("GEMINI_API_KEY" as any);
+  }
+
   if (missing.length > 0) {
     throw new Error(
       `Missing required environment variables: ${missing.join(", ")}\n` +
         "Please check your .env file.",
     );
+  }
+
+  // Warn about weak JWT secrets
+  if (env.JWT_ACCESS_SECRET.length < 32) {
+    logger.warn("ENV", "JWT_ACCESS_SECRET is shorter than 32 characters — consider using a stronger secret");
+  }
+  if (env.JWT_REFRESH_SECRET.length < 32) {
+    logger.warn("ENV", "JWT_REFRESH_SECRET is shorter than 32 characters — consider using a stronger secret");
+  }
+
+  // Log active AI provider
+  if (env.AI_PROVIDER === "ollama") {
+    logger.info("ENV", `AI Provider: Ollama (${env.OLLAMA_MODEL}) at ${env.OLLAMA_URL}`);
+  } else {
+    logger.info("ENV", `AI Provider: Gemini (${env.GEMINI_MODEL})`);
   }
 }

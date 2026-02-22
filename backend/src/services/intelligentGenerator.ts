@@ -1,4 +1,5 @@
 import { geminiService } from "./gemini.service";
+import { logger } from "../config/logger";
 
 export interface PipelineInput {
   topic: string;
@@ -33,22 +34,36 @@ class IntelligentGeneratorService {
    * Run the multi-agent generation pipeline
    */
   async generateWithPipeline(input: PipelineInput): Promise<PipelineOutput> {
+    const pipelineStart = Date.now();
+    logger.info("PIPELINE", `Starting generation for topic: "${input.topic}"`);
+
     // 1. Writer Agent: Create the initial draft
+    const writerStart = Date.now();
+    logger.info("PIPELINE", "Writer Agent started");
     const writerOutput = await this.runWriterAgent(input);
+    logger.info("PIPELINE", `Writer Agent completed`, { durationMs: Date.now() - writerStart });
 
     // 2 & 3. SEO + Conversion Critics run in PARALLEL — both only need the draft
+    const criticsStart = Date.now();
+    logger.info("PIPELINE", "SEO Critic + Conversion Critic started (parallel)");
     const [seoFeedback, conversionFeedback] = await Promise.all([
       this.runSEOCriticAgent(writerOutput, input),
       this.runConversionCriticAgent(writerOutput, input),
     ]);
+    logger.info("PIPELINE", `Critics completed (parallel)`, { durationMs: Date.now() - criticsStart });
 
     // 4. Synthesizer Agent: Final polished output
+    const synthStart = Date.now();
+    logger.info("PIPELINE", "Synthesizer Agent started");
     const finalResult = await this.runSynthesizerAgent(
       writerOutput,
       seoFeedback,
       conversionFeedback,
       input,
     );
+    logger.info("PIPELINE", `Synthesizer Agent completed`, { durationMs: Date.now() - synthStart });
+
+    logger.info("PIPELINE", `Pipeline complete`, { totalMs: Date.now() - pipelineStart, wordCount: finalResult.wordCount });
 
     return finalResult;
   }
