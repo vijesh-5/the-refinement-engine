@@ -195,7 +195,7 @@ class IntelligentGeneratorService {
 
     IMPORTANT: Return ONLY valid JSON. The finalContent field must contain clean Markdown text, NOT HTML.`;
 
-    const response = await geminiService.generateContent(prompt);
+    const response = await geminiService.generateContent(prompt, { json: true });
     return geminiService.parseJsonResponse<PipelineOutput>(response);
   }
 }
