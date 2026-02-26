@@ -1,109 +1,47 @@
-# Artifex — The Refinement Engine
+# 🌋 Artifex: The Refinement Engine
 
-AI-powered content generation platform that creates high-quality, brand-consistent marketing content with built-in quality scoring and competitor intelligence.
+**AI-powered Content Strategy & Growth Intelligence Platform.**
 
-## Features
+Artifex transforms raw ideas into high-quality, SEO-optimized, and brand-compliant editorial assets using a sophisticated Multi-Agent Refinement Pipeline.
 
-- **Blog Creator** — Generate SEO-optimized blog posts with configurable tone, audience, and keyword targeting
-- **Ad Copywriter** — Create platform-specific ad variants for Facebook, Instagram, Google, and LinkedIn
-- **Product Descriptions** — Generate e-commerce product copy with headlines, bullet points, and descriptions
-- **Brand Profiles** — Define brand voice, tone, banned words, and selling points — auto-injected into all content
-- **Competitor Intelligence** — Analyze competitor URLs to identify messaging gaps and auto-differentiate your content
-- **Content Library** — Save, browse, and manage all generated content with draft/complete status tracking
-- **Quality Scoring** — Every piece of content is scored on readability, SEO, and engagement
-- **Version History** — Improve content iteratively with AI refinement and track all versions
-- **Markdown Rendering** — Rich display of generated content with clean plain-text copy/export
+---
 
-## Tech Stack
+## 📚 Documentation Hub
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React, TypeScript, Vite, TanStack Query, shadcn/ui |
-| Backend | Node.js, Express, TypeScript |
-| Database | PostgreSQL, Prisma ORM |
-| AI | Google Gemini 2.5 Flash |
-| Auth | JWT (access + refresh tokens) |
+We have consolidated our documentation into four core pillars for better navigation:
 
-## Getting Started
+1.  **[🌟 Project Overview](PROJECT_OVERVIEW.md)**
+    *   Vision, core architecture, and a summary of implemented features.
+2.  **[🛠️ Development Guide](DEVELOPMENT_GUIDE.md)**
+    *   Technical stack, local development workflow, and troubleshooting.
+3.  **[📡 API Reference](API_REFERENCE.md)**
+    *   Full documentation of Auth, Content, and AI Pipeline endpoints.
+4.  **[🗺️ Roadmap & Progress](ROADMAP.md)**
+    *   Milestones achieved and future engineering goals.
 
-### Prerequisites
+---
 
-- Node.js 18+
-- PostgreSQL running locally or a connection string
-- Google Gemini API key
+## 🏁 Quick Setup (Windows)
 
-### Setup
+For new developers running on Windows with local Ollama, please refer to our dedicated setup guide:
+
+👉 **[Windows Setup Guide](SETUP.md)**
+
+---
+
+## 🚀 Speed Start
+
+If you have Node.js and PostgreSQL ready:
 
 ```bash
-# Clone the repo
-git clone https://github.com/your-username/the-refinement-engine.git
-cd the-refinement-engine
+# Start Backend (Port 5000)
+cd backend && npm install && npm run dev
 
-# Backend setup
-cd backend
-cp .env.example .env  # Fill in DATABASE_URL and GEMINI_API_KEY
-npm install
-npx prisma migrate deploy
-npx prisma generate
-npm run dev
-
-# Frontend setup (separate terminal)
-cd frontend
-npm install
-npm run dev
+# Start Frontend (Port 8080)
+cd frontend && npm install && npm run dev
 ```
 
-The frontend runs on `http://localhost:5173` and the backend on `http://localhost:5000`.
+---
 
-### Environment Variables
-
-Create a `.env` file in `backend/` with:
-
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/artifex
-GEMINI_API_KEY=your_gemini_api_key
-JWT_SECRET=your_jwt_secret
-JWT_REFRESH_SECRET=your_jwt_refresh_secret
-```
-
-## Project Structure
-
-```
-the-refinement-engine/
-├── backend/
-│   ├── prisma/              # Schema & migrations
-│   ├── src/
-│   │   ├── config/          # Database connection
-│   │   ├── controllers/     # Route handlers
-│   │   ├── middleware/       # Auth, error handling
-│   │   ├── routes/          # API route definitions
-│   │   ├── services/        # Business logic & AI generators
-│   │   └── utils/           # Validation schemas
-│   └── package.json
-├── frontend/
-│   ├── src/
-│   │   ├── components/      # Shared UI components
-│   │   ├── lib/             # API client, utilities
-│   │   └── pages/           # Application pages
-│   └── package.json
-└── README.md
-```
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/signup` | Register |
-| POST | `/api/auth/login` | Login |
-| POST | `/api/generate/blog` | Generate blog post |
-| POST | `/api/generate/ad` | Generate ad variants |
-| POST | `/api/generate/product` | Generate product description |
-| GET | `/api/content` | List saved content |
-| POST | `/api/content` | Save content |
-| DELETE | `/api/content/:id` | Delete content |
-| GET | `/api/brands` | List brand profiles |
-| POST | `/api/competitors/analyze` | Analyze competitor URL |
-
-## License
-
+## 📜 License
 MIT
