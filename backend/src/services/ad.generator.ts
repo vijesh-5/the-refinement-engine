@@ -127,7 +127,7 @@ Return the response in the following JSON format:
 IMPORTANT: Return ONLY valid JSON, no additional text or markdown formatting.`;
 
   // Generate content using Gemini
-  const response = await geminiService.generateContent(prompt);
+  const response = await geminiService.generateContent(prompt, { json: true });
   const output = geminiService.parseJsonResponse<AdOutput>(response);
 
   // Calculate score for the first variant (or combine all)

@@ -13,6 +13,7 @@ import userRoutes from "./routes/user.routes";
 import generateRoutes from "./routes/generate.routes";
 import brandRoutes from "./routes/brand.routes";
 import competitorRoutes from "./routes/competitor.routes";
+import diagnosticsRoutes from "./routes/diagnostics.routes";
 
 export function createApp(): Application {
   const app = express();
@@ -69,6 +70,7 @@ export function createApp(): Application {
   app.use("/api/users", userRoutes);
   app.use("/api/brands", brandRoutes);
   app.use("/api/competitors", competitorRoutes);
+  app.use("/api/diagnostics", diagnosticsRoutes);
 
   // Error handling
   app.use(notFoundHandler);

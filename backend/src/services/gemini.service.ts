@@ -25,9 +25,9 @@ class AIService {
   /**
    * Generate content using the configured AI provider (Gemini or Ollama).
    */
-  async generateContent(prompt: string): Promise<string> {
+  async generateContent(prompt: string, options?: { json?: boolean }): Promise<string> {
     if (this.provider === "ollama") {
-      return this.callOllama(prompt);
+      return this.callOllama(prompt, options);
     }
     return this.callGemini(prompt);
   }
@@ -44,33 +44,46 @@ class AIService {
 
       return text;
     } catch (error: any) {
+      console.error("Gemini API Error Detail:", {
+        message: error.message,
+        status: error.status,
+        reason: error.reason,
+        stack: error.stack
+      });
+
       if (error.message?.includes("API key")) {
-        throw new AppError(500, "Invalid Gemini API key");
+        throw new AppError(500, "Invalid Gemini API key. Please check your .env configuration.");
       }
-      if (error.message?.includes("quota")) {
-        throw new AppError(429, "Gemini quota exceeded. Switch to AI_PROVIDER=ollama or try later.");
+      if (error.message?.includes("quota") || error.message?.includes("429")) {
+        throw new AppError(429, `Gemini quota exceeded: ${error.message}. If you just updated your key, ensure the server was restarted.`);
       }
       throw new AppError(500, `Gemini error: ${error.message || "Unknown error"}`);
     }
   }
 
-  private async callOllama(prompt: string): Promise<string> {
+  private async callOllama(prompt: string, options?: { json?: boolean }): Promise<string> {
     const baseUrl = env.OLLAMA_URL || "http://localhost:11434";
     const model = env.OLLAMA_MODEL || "llama3:8b";
 
     try {
+      const body: any = {
+        model,
+        prompt,
+        stream: false,
+        options: {
+          temperature: 0.7,
+          num_predict: 4096,
+        },
+      };
+
+      if (options?.json) {
+        body.format = "json";
+      }
+
       const response = await fetch(`${baseUrl}/api/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model,
-          prompt,
-          stream: false,
-          options: {
-            temperature: 0.7,
-            num_predict: 4096,
-          },
-        }),
+        body: JSON.stringify(body),
         signal: AbortSignal.timeout(120_000), // 2 min — local LLM can be slow on first call
       });
 
@@ -114,29 +127,49 @@ class AIService {
    * Parse JSON from AI response text, stripping markdown code fences if present.
    */
   parseJsonResponse<T>(text: string): T {
+    let clean = text.trim();
+
     try {
-      let clean = text.trim();
-
       // Strip ```json ... ``` or ``` ... ```
-      if (clean.startsWith("```json")) {
-        clean = clean.replace(/^```json\n?/, "").replace(/\n?```$/, "");
-      } else if (clean.startsWith("```")) {
-        clean = clean.replace(/^```\n?/, "").replace(/\n?```$/, "");
-      }
-
-      // Some Ollama models add prose before the JSON — try to extract the JSON object/array
-      const jsonStart = clean.search(/[{[]/);
-      if (jsonStart > 0) {
-        clean = clean.slice(jsonStart);
-        const jsonEnd = Math.max(clean.lastIndexOf("}"), clean.lastIndexOf("]"));
-        if (jsonEnd !== -1) {
-          clean = clean.slice(0, jsonEnd + 1);
+      if (clean.includes("```json")) {
+        clean = clean.split("```json")[1].split("```")[0].trim();
+      } else if (clean.includes("```")) {
+        const parts = clean.split("```");
+        if (parts.length >= 3) {
+          clean = parts[1].trim();
         }
       }
 
+      // Final attempt: extract between first { or [ and last } or ]
+      const firstCurly = clean.indexOf("{");
+      const firstBracket = clean.indexOf("[");
+      const lastCurly = clean.lastIndexOf("}");
+      const lastBracket = clean.lastIndexOf("]");
+
+      let start = -1;
+      let end = -1;
+
+      // Determine if it's an object or array
+      if (firstCurly !== -1 && (firstBracket === -1 || firstCurly < firstBracket)) {
+        start = firstCurly;
+        end = lastCurly;
+      } else if (firstBracket !== -1) {
+        start = firstBracket;
+        end = lastBracket;
+      }
+
+      if (start !== -1 && end !== -1 && end > start) {
+        clean = clean.slice(start, end + 1);
+      }
+
       return JSON.parse(clean);
-    } catch {
-      throw new AppError(500, "Failed to parse AI response as JSON. The model may need a better system prompt for structured output.");
+    } catch (error: any) {
+      console.error("JSON Parse Error:", {
+        error: error.message,
+        text: text.slice(0, 500) + (text.length > 500 ? "..." : ""),
+        cleaned: clean.slice(0, 500)
+      });
+      throw new AppError(500, `Failed to parse AI response as JSON. The model (especially smaller ones like ${env.OLLAMA_MODEL}) may have returned malformed output.`);
     }
   }
 
