@@ -17,6 +17,9 @@ import diagnosticsRoutes from "./routes/diagnostics.routes";
 import pillarRoutes from "./routes/pillar.routes";
 import mediaRoutes from "./routes/media.routes";
 import formatRoutes from "./routes/format.routes";
+import shareRoutes from "./routes/share.routes";
+import * as shareController from "./controllers/share.controller";
+import * as exportController from "./controllers/export.controller";
 
 export function createApp(): Application {
   const app = express();
@@ -63,6 +66,9 @@ export function createApp(): Application {
       pillars: "/api/pillars/*",
         media: "/api/content/:id/assets/*",
         format: "/api/format/*",
+        export: "/api/content/:id/export",
+        share: "/api/content/:id/share",
+        public: "/public/:slug",
       },
     });
   });
@@ -79,6 +85,11 @@ export function createApp(): Application {
   app.use("/api/pillars", pillarRoutes);
   app.use("/api/content/:id/assets", mediaRoutes);
   app.use("/api/format", formatRoutes);
+  // Phase 12: export + sharing
+  app.get("/api/content/:id/export", exportController.exportContent);
+  app.use("/api/content/:id/share", shareRoutes);
+  // Unauthenticated public read-only view
+  app.get("/public/:slug", shareController.getPublicView);
   app.use("/api/diagnostics", diagnosticsRoutes);
 
   // Error handling
