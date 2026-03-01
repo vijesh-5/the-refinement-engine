@@ -17,6 +17,7 @@ export const env = {
   AI_PROVIDER: process.env.AI_PROVIDER || "gemini",
   OLLAMA_URL: process.env.OLLAMA_URL || "http://localhost:11434",
   OLLAMA_MODEL: process.env.OLLAMA_MODEL || "llama3:8b",
+  PIPELINE_MODE: process.env.PIPELINE_MODE || "auto", // "full" | "light" | "auto"
 } as const;
 
 // Validate required environment variables

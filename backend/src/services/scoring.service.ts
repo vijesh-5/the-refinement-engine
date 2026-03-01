@@ -3,11 +3,22 @@ export interface ContentScore {
   readability: number;
   seo: number;
   engagement: number;
+  conversion?: ConversionBreakdown;
   details: {
     readabilityFeedback: string;
     seoFeedback: string;
     engagementFeedback: string;
   };
+}
+
+export interface ConversionBreakdown {
+  total: number;
+  ctaStrength: number;
+  urgency: number;
+  socialProof: number;
+  valueProposition: number;
+  scannability: number;
+  feedback: string[];
 }
 
 class ScoringService {
@@ -23,6 +34,7 @@ class ScoringService {
     const readability = this.calculateReadability(content, type);
     const seo = this.calculateSEO(content, keywords, type);
     const engagement = this.calculateEngagement(content, type);
+    const conversion = this.calculateConversion(content, type);
 
     const total = Math.round((readability + seo + engagement) / 3);
 
@@ -31,6 +43,7 @@ class ScoringService {
       readability,
       seo,
       engagement,
+      conversion,
       details: {
         readabilityFeedback: this.getReadabilityFeedback(readability, content, type),
         seoFeedback: this.getSEOFeedback(seo, keywords, type),
@@ -274,6 +287,65 @@ class ScoringService {
     if (w.length <= 3) return 1;
     const vowelMatches = w.replace(/e$/, "").match(/[aeiouy]+/g);
     return Math.max(1, (vowelMatches || []).length);
+  }
+
+  // ─── Conversion Score Breakdown ─────────────────────────────────────────
+
+  private calculateConversion(content: string, type: string): ConversionBreakdown {
+    const lower = content.toLowerCase();
+    const feedback: string[] = [];
+
+    // CTA Strength (0-100)
+    const ctaPatterns = /(get started|try|start|join|sign up|subscribe|download|learn more|contact|book|claim|buy|order|register|enroll|request|apply|grab|unlock|discover)/gi;
+    const ctaMatches = lower.match(ctaPatterns) || [];
+    let ctaStrength = Math.min(100, ctaMatches.length * 25);
+    if (ctaMatches.length === 0) feedback.push("Add clear calls-to-action (e.g., 'Get Started', 'Learn More')");
+    else if (ctaMatches.length >= 3) feedback.push("Strong CTA presence");
+
+    // Urgency (0-100)
+    const urgencyPatterns = /(now|today|limited|hurry|don't miss|last chance|only|exclusive|deadline|act fast|before it's gone|time-sensitive)/gi;
+    const urgencyMatches = lower.match(urgencyPatterns) || [];
+    let urgency = Math.min(100, urgencyMatches.length * 30);
+    if (urgencyMatches.length === 0) feedback.push("Consider adding urgency elements");
+
+    // Social Proof (0-100)
+    const proofPatterns = /(trusted|testimonial|review|case study|proven|award|million|thousand|client|customer|partner|star|rated|recommended)/gi;
+    const proofMatches = lower.match(proofPatterns) || [];
+    let socialProof = Math.min(100, proofMatches.length * 25);
+    if (proofMatches.length === 0) feedback.push("Add social proof (testimonials, stats, case studies)");
+
+    // Value Proposition (0-100)
+    const valuePatterns = /(benefit|advantage|solution|result|outcome|save|improve|increase|reduce|transform|boost|grow|achieve|deliver)/gi;
+    const valueMatches = lower.match(valuePatterns) || [];
+    let valueProposition = Math.min(100, valueMatches.length * 20);
+    if (valueMatches.length < 2) feedback.push("Emphasize more concrete benefits and outcomes");
+
+    // Scannability (0-100)
+    const headings = (content.match(/^#{1,4}\s+.+/gm) || []).length;
+    const bullets = (content.match(/^[\s-*]+.+/gm) || []).length;
+    const boldText = (content.match(/\*\*.+?\*\*/g) || []).length;
+    let scannability = Math.min(100, (headings * 15) + (bullets * 5) + (boldText * 10));
+    if (scannability < 40) feedback.push("Improve scannability with more headings, bullets, and bold text");
+
+    // Ad type adjustments
+    if (type === "ad") {
+      ctaStrength = Math.min(100, ctaStrength * 1.5);
+      urgency = Math.min(100, urgency * 1.3);
+    }
+
+    const total = Math.round(
+      ctaStrength * 0.3 + urgency * 0.15 + socialProof * 0.2 + valueProposition * 0.2 + scannability * 0.15
+    );
+
+    return {
+      total,
+      ctaStrength: Math.round(ctaStrength),
+      urgency: Math.round(urgency),
+      socialProof: Math.round(socialProof),
+      valueProposition: Math.round(valueProposition),
+      scannability: Math.round(scannability),
+      feedback,
+    };
   }
 }
 

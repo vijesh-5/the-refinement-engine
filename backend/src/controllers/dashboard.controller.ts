@@ -13,3 +13,14 @@ export const getDashboard = asyncHandler(
     });
   },
 );
+
+export const getGrowthDashboard = asyncHandler(
+  async (req: AuthenticatedRequest, res: Response) => {
+    const growth = await dashboardService.getGrowthStats(req.user!.id);
+
+    res.status(200).json({
+      success: true,
+      data: growth,
+    });
+  },
+);

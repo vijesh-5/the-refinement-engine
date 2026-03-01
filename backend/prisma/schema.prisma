@@ -22,6 +22,7 @@ model User {
   refreshTokens RefreshToken[]
   brandProfiles BrandProfile[]
   topicSuggestions TopicSuggestion[]
+  authorityPillars AuthorityPillar[]
 
   @@index([email])
   @@map("users")
@@ -83,18 +84,28 @@ model Content {
   generatedOutput Json?         // Store structured AI output
   templateId    String?
   userId        String
+
+  // Strategic metadata (Phase 1 — Growth Infrastructure)
+  funnelStage     String?       // "TOFU" | "MOFU" | "BOFU"
+  objective       String?       // "traffic" | "leads" | "sales"
+  primaryKeyword  String?
+  pillarId        String?
   
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
   user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   template      Template?       @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  pillar        AuthorityPillar? @relation(fields: [pillarId], references: [id], onDelete: SetNull)
   versions      ContentVersion[]
 
   @@index([userId])
   @@index([status])
   @@index([contentType])
   @@index([createdAt])
+  @@index([funnelStage])
+  @@index([objective])
+  @@index([pillarId])
   @@map("contents")
 }
 
@@ -170,4 +181,37 @@ model TopicSuggestion {
   @@index([userId])
   @@index([createdAt])
   @@map("topic_suggestions")
+}
+
+// ─── Growth Infrastructure ──────────────────────────────────────────────────
+
+model AuthorityPillar {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  description String?  @db.Text
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contents    Content[]
+  clusters    ContentCluster[]
+
+  @@index([userId])
+  @@map("authority_pillars")
+}
+
+model ContentCluster {
+  id        String   @id @default(uuid())
+  pillarId  String
+  name      String
+  keywords  String[] @default([])
+
+  createdAt DateTime @default(now())
+
+  pillar    AuthorityPillar @relation(fields: [pillarId], references: [id], onDelete: Cascade)
+
+  @@index([pillarId])
+  @@map("content_clusters")
 }

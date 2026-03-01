@@ -1,8 +1,10 @@
 import { prisma } from "../config/database";
 import { intelligentGeneratorService } from "./intelligentGenerator";
+import { lightweightGeneratorService, getPipelineMode } from "./lightweightGenerator";
 import { scoringService, ContentScore } from "./scoring.service";
 import { competitorService } from "./competitor.service";
 import { topicSuggestionService } from "./topic.service";
+import { logger } from "../config/logger";
 
 interface BlogInput {
   topic: string;
@@ -12,6 +14,11 @@ interface BlogInput {
   length: "short" | "medium" | "long";
   intent?: string;
   brandId?: string;
+  // Strategic metadata
+  funnelStage?: string;
+  objective?: string;
+  primaryKeyword?: string;
+  pillarId?: string;
 }
 
 interface BlogOutput {
@@ -47,21 +54,38 @@ export async function generateBlog(
     }
   }
 
-  // Fetch competitor context if brand is selected
-  let competitorContext = "";
-  if (input.brandId) {
-    competitorContext = await competitorService.getCompetitorContext(input.brandId);
+  const lengthLabel = input.length === "short" ? "800 words" : input.length === "medium" ? "1500 words" : "2500 words";
+
+  // Determine pipeline mode
+  const mode = getPipelineMode();
+  logger.info("PIPELINE", `Using ${mode} pipeline mode`);
+
+  let pipelineResult;
+
+  if (mode === "light") {
+    // ─── Lightweight: 1 LLM call ──────────────────────────────────────
+    pipelineResult = await lightweightGeneratorService.generate({
+      ...input,
+      brand: brandContext,
+      length: lengthLabel,
+    });
+  } else {
+    // ─── Full: 4 LLM calls (Writer → Critics → Synthesizer) ──────────
+    // Fetch competitor context only in full mode (too heavy for local)
+    let competitorContext = "";
+    if (input.brandId) {
+      competitorContext = await competitorService.getCompetitorContext(input.brandId);
+    }
+
+    pipelineResult = await intelligentGeneratorService.generateWithPipeline({
+      ...input,
+      brand: brandContext,
+      length: lengthLabel,
+      competitorContext,
+    });
   }
 
-  // Use the multi-agent pipeline for intelligent generation
-  const pipelineResult = await intelligentGeneratorService.generateWithPipeline({
-    ...input,
-    brand: brandContext,
-    length: input.length === "short" ? "800 words" : input.length === "medium" ? "1500 words" : "2500 words",
-    competitorContext,
-  });
-
-  // Calculate scores for the generated content
+  // Calculate scores (heuristic — zero AI cost)
   const score = await scoringService.scoreContent(pipelineResult.finalContent, "blog", input.keywords);
 
   const output: BlogOutput = {
@@ -73,10 +97,10 @@ export async function generateBlog(
     seoInsights: pipelineResult.seoInsights,
     conversionInsights: pipelineResult.conversionInsights,
     reasoningSummary: pipelineResult.reasoningSummary,
-    score
+    score,
   };
 
-  // Save to database
+  // Save to database with strategic metadata
   const content = await prisma.content.create({
     data: {
       userId,
@@ -86,6 +110,11 @@ export async function generateBlog(
       status: "COMPLETE",
       inputData: input as any,
       generatedOutput: output as any,
+      // Strategic metadata
+      funnelStage: input.funnelStage || null,
+      objective: input.objective || null,
+      primaryKeyword: input.primaryKeyword || input.keywords[0] || null,
+      pillarId: input.pillarId || null,
     },
   });
 

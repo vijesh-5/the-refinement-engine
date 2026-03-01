@@ -7,5 +7,6 @@ const router = Router();
 router.use(authenticate);
 
 router.get("/", dashboardController.getDashboard);
+router.get("/growth", dashboardController.getGrowthDashboard);
 
 export default router;

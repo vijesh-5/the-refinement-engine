@@ -32,6 +32,16 @@ This document tracks the evolution of **Artifex** and outlines future enhancemen
 
 ---
 
+## 🌱 Growth Infrastructure (Active)
+- [x] **Lightweight Pipeline**: Single-call generation for local models (Ollama) — 4 LLM calls → 1.
+- [x] **Strategic Metadata**: Funnel stage, objective, and keyword tracking per content piece.
+- [x] **Authority Map**: Topic clustering, coverage gap analysis, pillar-based content organization.
+- [x] **Conversion Scoring**: Breakdown by CTA strength, urgency, social proof, value proposition, scannability.
+- [x] **Deterministic Insights**: Topic suggestions via keyword extraction (zero AI cost in light mode).
+- [x] **Growth Dashboard API**: Funnel distribution, pillar balance, content velocity endpoints.
+
+---
+
 ## 🚀 Future Goals
 
 ### Phase 11: Multi-Media Enrichment

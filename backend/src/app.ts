@@ -14,6 +14,7 @@ import generateRoutes from "./routes/generate.routes";
 import brandRoutes from "./routes/brand.routes";
 import competitorRoutes from "./routes/competitor.routes";
 import diagnosticsRoutes from "./routes/diagnostics.routes";
+import pillarRoutes from "./routes/pillar.routes";
 
 export function createApp(): Application {
   const app = express();
@@ -57,6 +58,7 @@ export function createApp(): Application {
         templates: "/api/templates/*",
         brands: "/api/brands/*",
         competitors: "/api/competitors/*",
+        pillars: "/api/pillars/*",
       },
     });
   });
@@ -70,6 +72,7 @@ export function createApp(): Application {
   app.use("/api/users", userRoutes);
   app.use("/api/brands", brandRoutes);
   app.use("/api/competitors", competitorRoutes);
+  app.use("/api/pillars", pillarRoutes);
   app.use("/api/diagnostics", diagnosticsRoutes);
 
   // Error handling
