@@ -9,6 +9,11 @@ export const generateBlogSchema = z.object({
   length: z.enum(["short", "medium", "long"]).default("medium"),
   intent: z.string().optional(),
   brandId: z.string().optional(),
+  // Strategic metadata
+  funnelStage: z.enum(["TOFU", "MOFU", "BOFU"]).optional(),
+  objective: z.enum(["traffic", "leads", "sales"]).optional(),
+  primaryKeyword: z.string().optional(),
+  pillarId: z.string().uuid().optional(),
 });
 
 // Ad Copywriter Validation

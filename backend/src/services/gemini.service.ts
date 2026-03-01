@@ -72,7 +72,7 @@ class AIService {
         stream: false,
         options: {
           temperature: 0.7,
-          num_predict: 4096,
+          num_predict: 2048,
         },
       };
 

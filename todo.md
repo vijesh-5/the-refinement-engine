@@ -71,3 +71,14 @@ This document tracks the evolution of Artifex from a visual mockup to a Content 
 - [x] Ensure `DATABASE_URL` and `GEMINI_API_KEY` are properly validated.
 - [x] Add request logging for multi-agent pipeline phases.
 - [x] Implement rate limiting to prevent token exhaustion.
+
+---
+
+### Growth Infrastructure — Llama 1b Optimization ✅
+- [x] **Strategic Metadata Layer**: Added `funnelStage`, `objective`, `primaryKeyword`, `pillarId` to Content model. Created `authority_pillars` and `content_clusters` tables.
+- [x] **Lightweight Pipeline**: Single-call blog generation for local models (`lightweightGenerator.ts`). Routes automatically via `PIPELINE_MODE` env var (auto/light/full).
+- [x] **Deterministic Topic Suggestions**: Keyword extraction via TF scoring, template-based topic ideas (zero LLM calls in light mode).
+- [x] **Authority Map Engine**: Pillar → cluster structure with funnel/objective breakdowns and coverage gap analysis.
+- [x] **Conversion Score Breakdown**: CTA strength, urgency, social proof, value proposition, scannability metrics.
+- [x] **Growth Dashboard API**: `/api/dashboard/growth` and `/api/pillars/authority-map` endpoints.
+- [x] **Ollama Token Cap**: Reduced `num_predict` from 4096 → 2048 for faster local generation.
