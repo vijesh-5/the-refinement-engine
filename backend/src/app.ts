@@ -20,6 +20,10 @@ import formatRoutes from "./routes/format.routes";
 import shareRoutes from "./routes/share.routes";
 import * as shareController from "./controllers/share.controller";
 import * as exportController from "./controllers/export.controller";
+import analyticsRoutes from "./routes/analytics.routes";
+import abRoutes from "./routes/ab.routes";
+import vaultRoutes from "./routes/vault.routes";
+import personaRoutes from "./routes/persona.routes";
 
 export function createApp(): Application {
   const app = express();
@@ -69,6 +73,10 @@ export function createApp(): Application {
         export: "/api/content/:id/export",
         share: "/api/content/:id/share",
         public: "/public/:slug",
+        analytics: "/api/analytics/*",
+        variants: "/api/content/:id/variants",
+        vault: "/api/vault/*",
+        personas: "/api/personas/*",
       },
     });
   });
@@ -90,6 +98,12 @@ export function createApp(): Application {
   app.use("/api/content/:id/share", shareRoutes);
   // Unauthenticated public read-only view
   app.get("/public/:slug", shareController.getPublicView);
+  // Phase 13: analytics + A/B
+  app.use("/api/analytics", analyticsRoutes);
+  app.use("/api/content/:id/variants", abRoutes);
+  // Future-ready: Knowledge Vault + Personas (storage only, not pipeline-injected)
+  app.use("/api/vault", vaultRoutes);
+  app.use("/api/personas", personaRoutes);
   app.use("/api/diagnostics", diagnosticsRoutes);
 
   // Error handling
