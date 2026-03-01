@@ -18,6 +18,7 @@ export const env = {
   OLLAMA_URL: process.env.OLLAMA_URL || "http://localhost:11434",
   OLLAMA_MODEL: process.env.OLLAMA_MODEL || "llama3:8b",
   PIPELINE_MODE: process.env.PIPELINE_MODE || "auto", // "full" | "light" | "auto"
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY || "",    // Optional: used for DALL-E 3 image generation
 } as const;
 
 // Validate required environment variables
