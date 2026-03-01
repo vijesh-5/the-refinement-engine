@@ -23,6 +23,7 @@ model User {
   brandProfiles BrandProfile[]
   topicSuggestions TopicSuggestion[]
   authorityPillars AuthorityPillar[]
+  knowledgeDocuments KnowledgeDocument[]
 
   @@index([email])
   @@map("users")
@@ -44,6 +45,7 @@ model BrandProfile {
 
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   competitorInsights CompetitorInsight[]
+  personas        BrandPersona[]
 
   @@index([userId])
   @@map("brand_profiles")
@@ -98,6 +100,10 @@ model Content {
   template      Template?       @relation(fields: [templateId], references: [id], onDelete: SetNull)
   pillar        AuthorityPillar? @relation(fields: [pillarId], references: [id], onDelete: SetNull)
   versions      ContentVersion[]
+  assets        ContentAsset[]
+  publicLinks   PublicLink[]
+  performance   ContentPerformance[]
+  abVariants    AbVariant[]
 
   @@index([userId])
   @@index([status])
@@ -214,4 +220,108 @@ model ContentCluster {
 
   @@index([pillarId])
   @@map("content_clusters")
+}
+
+// ─── Phase 11 — Multi-Media Enrichment ─────────────────────────────────────
+
+model ContentAsset {
+  id        String   @id @default(uuid())
+  contentId String
+  type      String   @default("thumbnail") // "thumbnail" | "social" | "other"
+  url       String
+  prompt    String?  @db.Text             // The prompt used to generate the image
+
+  createdAt DateTime @default(now())
+
+  content   Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@index([contentId])
+  @@map("content_assets")
+}
+
+// ─── Phase 12 — Public Sharing ──────────────────────────────────────────────
+
+model PublicLink {
+  id        String   @id @default(uuid())
+  contentId String
+  slug      String   @unique
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+
+  content   Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@index([slug])
+  @@index([contentId])
+  @@map("public_links")
+}
+
+// ─── Phase 13 — Advanced Analytics ─────────────────────────────────────────
+
+model ContentPerformance {
+  id          String   @id @default(uuid())
+  contentId   String
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+  ctr         Float    @default(0)
+  avgPosition Float    @default(0)
+  date        DateTime
+
+  createdAt   DateTime @default(now())
+
+  content     Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@index([contentId])
+  @@index([date])
+  @@map("content_performance")
+}
+
+model AbVariant {
+  id           String   @id @default(uuid())
+  contentId    String
+  variantLabel String   // "A", "B", "C" or custom label
+  contentText  String   @db.Text
+
+  createdAt    DateTime @default(now())
+
+  content      Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@index([contentId])
+  @@map("ab_variants")
+}
+
+// ─── Future-Ready Schema (Inactive) ─────────────────────────────────────────
+
+model KnowledgeDocument {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  content   String   @db.Text
+  embedding Json?    // nullable — populated when RAG is activated
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("knowledge_documents")
+}
+
+model BrandPersona {
+  id              String      @id @default(uuid())
+  brandId         String
+  name            String
+  description     String?     @db.Text
+  toneBias        String?     // e.g. "formal", "playful"
+  vocabularyBias  String?     // e.g. "technical", "simple"
+  active          Boolean     @default(false)  // not injected until active
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  brand           BrandProfile @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@index([brandId])
+  @@map("brand_personas")
 }

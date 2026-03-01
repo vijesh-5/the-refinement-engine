@@ -42,16 +42,76 @@ This document tracks the evolution of **Artifex** and outlines future enhancemen
 
 ---
 
-## 🚀 Future Goals
+---
 
-### Phase 11: Multi-Media Enrichment
-- [ ] **AI Image Gen**: DALL-E 3 integration for automated blog thumbnails.
-- [ ] **Social Sharing**: Auto-formatting for X (Twitter) and Thread threads.
+## � Infrastructure Expansion Plan (Post-Growth Switch)
 
-### Phase 12: Export & Sharing
-- [ ] **Advanced Export**: One-click PDF, HTML, and Word formats.
-- [ ] **Public View**: Shareable read-only links for generated content.
+This section defines the structured continuation of development from Phase 11 onward. All upcoming phases must maintain backward compatibility and preserve lightweight stability.
 
-### Phase 13: Advanced Analytics
-- [ ] **Traffic Prediction**: Integration with Google Search Console API for real-world volume data.
-- [ ] **A/B Testing**: Side-by-side variant generation for ad copy.
+### ⚙️ Global Architectural Guardrails
+- **No schema deletions** or breaking API response formats.
+- **No automatic multi-pass LLM logic** in light mode.
+- **Graceful degradation** for Ollama (llama 3.2:1b).
+- **Heavy AI logic** allowed ONLY in `PIPELINE_MODE=full`.
+
+---
+
+### 🚀 Phase 11: Multi-Media Enrichment (Non-Blocking)
+#### 11.1 AI Image Generation
+- Triggered only via **explicit user action**.
+- Uses external API (e.g., DALL-E 3); never auto-generated during content creation.
+- **Schema Addition**: `content_assets` (id, content_id, type, url, created_at).
+
+#### 11.2 Social Sharing Formatter
+- **Deterministic formatting** in light mode; optional AI refinement in full mode.
+- **New Endpoint**: `POST /api/format/social` (X threads, LinkedIn carousels, Captions).
+- No changes to generation pipeline.
+
+---
+
+### 📤 Phase 12: Export & Sharing
+#### 12.1 Advanced Export
+- PDF, HTML, and Word (.docx) export options.
+- Includes funnel stage, SEO/Conversion scores, versioning, and timestamps.
+- Relies only on stored metadata; **no new AI calls**.
+
+#### 12.2 Public View Links
+- **Schema Addition**: `public_links` (id, content_id, slug, is_active, created_at).
+- **Endpoint**: `GET /public/:slug` (Read-only, secure, and cache-friendly).
+
+---
+
+### 📊 Phase 13: Advanced Analytics
+#### 13.1 Google Search Console Integration
+- **Schema Addition**: `content_performance` (impressions, clicks, ctr, position).
+- Background sync jobs only; no blocking API calls.
+- Compare predicted vs actual performance and compute ranking trends.
+
+#### 13.2 A/B Testing (Lightweight Safe)
+- **Schema Addition**: `ab_variants` (id, content_id, label, content_text).
+- Light mode generates 1 version; additional variants only on user action.
+
+---
+
+### 🧠 Future-Ready Preparation (Inactive)
+Structures to be added now but remain inactive to smooth future integration.
+
+#### 📚 Knowledge Vault (Schema Only)
+- `knowledge_documents` (id, user_id, title, content, embedding, created_at).
+- No embedding or retrieval logic yet.
+
+#### 🎭 Brand Personas (Schema Only)
+- `brand_personas` (id, brand_id, name, description, tone/vocabulary bias).
+- CRUD only; no injection into pipeline yet.
+
+---
+
+### 🗂️ Implementation Order (Strict)
+1. **Phase 11** — Media enrichment (isolated services).
+2. **Phase 12** — Export + Public sharing.
+3. **Phase 13** — Analytics + A/B.
+4. **Add Knowledge Vault schema**.
+5. **Add Persona schema**.
+
+### 🎯 Long-Term Objective
+Artifex evolves into an **AI Growth Infrastructure Platform** while remaining local-machine safe, Llama 1b optimized, and extensible for future RAG integration.

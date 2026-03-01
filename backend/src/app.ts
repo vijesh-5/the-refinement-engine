@@ -15,6 +15,8 @@ import brandRoutes from "./routes/brand.routes";
 import competitorRoutes from "./routes/competitor.routes";
 import diagnosticsRoutes from "./routes/diagnostics.routes";
 import pillarRoutes from "./routes/pillar.routes";
+import mediaRoutes from "./routes/media.routes";
+import formatRoutes from "./routes/format.routes";
 
 export function createApp(): Application {
   const app = express();
@@ -58,7 +60,9 @@ export function createApp(): Application {
         templates: "/api/templates/*",
         brands: "/api/brands/*",
         competitors: "/api/competitors/*",
-        pillars: "/api/pillars/*",
+      pillars: "/api/pillars/*",
+        media: "/api/content/:id/assets/*",
+        format: "/api/format/*",
       },
     });
   });
@@ -73,6 +77,8 @@ export function createApp(): Application {
   app.use("/api/brands", brandRoutes);
   app.use("/api/competitors", competitorRoutes);
   app.use("/api/pillars", pillarRoutes);
+  app.use("/api/content/:id/assets", mediaRoutes);
+  app.use("/api/format", formatRoutes);
   app.use("/api/diagnostics", diagnosticsRoutes);
 
   // Error handling
