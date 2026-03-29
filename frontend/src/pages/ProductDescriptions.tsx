@@ -33,7 +33,9 @@ import {
   RotateCcw,
   Briefcase,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Pencil,
+  FileDown,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
@@ -73,18 +75,28 @@ export default function ProductDescriptions() {
         setCurrentContentId(item.id);
         // Try to restore structured content from generatedOutput
         const output = (item as any).generatedOutput;
-        if (output && output.headline) {
+        if (output && output.productName) {
           setGeneratedContent(output as ProductContent);
         } else if (item.body) {
-          // Fallback: put body into longDesc
-          setGeneratedContent({
-            headline: item.title,
-            shortDesc: "",
-            longDesc: item.body,
-            bullets: [],
-            id: item.id,
-            score: { total: 0, readability: 0, seo: 0, engagement: 0, details: {} },
-          } as ProductContent);
+          // Fallback: try parsing body as JSON (backend stores JSON.stringify(output))
+          try {
+            const parsed = JSON.parse(item.body);
+            if (parsed.productName) {
+              setGeneratedContent(parsed as ProductContent);
+            } else {
+              throw new Error("Not structured product data");
+            }
+          } catch {
+            // Last resort: treat body as plain long description
+            setGeneratedContent({
+              productName: item.title,
+              shortDescription: "",
+              longDescription: item.body,
+              bulletFeatures: [],
+              id: item.id,
+              score: { total: 0, readability: 0, seo: 0, engagement: 0, details: {} },
+            } as ProductContent);
+          }
         }
         const input = (item as any).inputData;
         if (input) {
@@ -145,7 +157,7 @@ export default function ProductDescriptions() {
           try {
             data = JSON.parse(result.data.body);
           } catch {
-            data = { ...generatedContent!, longDesc: result.data.body };
+            data = { ...generatedContent!, longDescription: result.data.body };
           }
           setGeneratedContent(data);
           toast.success(`Content improved! (Version ${result.data.versionNumber})`);
@@ -185,7 +197,7 @@ export default function ProductDescriptions() {
       toast.info(`Switched to Version ${version.versionNumber}`);
     } catch (e) {
       // Fallback if it's not JSON
-      setGeneratedContent({ ...generatedContent!, longDesc: version.body });
+      setGeneratedContent({ ...generatedContent!, longDescription: version.body });
       toast.info(`Switched to Version ${version.versionNumber}`);
     }
   };
@@ -237,6 +249,70 @@ export default function ProductDescriptions() {
     { label: "Desire", value: 88, icon: Star },
     { label: "Urgency", value: 82, icon: Zap },
   ];
+
+  // ── Inline editing helpers ──
+  const updateField = (field: keyof ProductContent, value: any) => {
+    if (generatedContent) {
+      setGeneratedContent({ ...generatedContent, [field]: value });
+    }
+  };
+
+  const updateBullet = (index: number, value: string) => {
+    if (generatedContent) {
+      const newBullets = [...generatedContent.bulletFeatures];
+      newBullets[index] = value;
+      setGeneratedContent({ ...generatedContent, bulletFeatures: newBullets });
+    }
+  };
+
+  const addBullet = () => {
+    if (generatedContent) {
+      setGeneratedContent({ ...generatedContent, bulletFeatures: [...generatedContent.bulletFeatures, ""] });
+    }
+  };
+
+  const removeBullet = (index: number) => {
+    if (generatedContent && generatedContent.bulletFeatures.length > 1) {
+      setGeneratedContent({ ...generatedContent, bulletFeatures: generatedContent.bulletFeatures.filter((_, i) => i !== index) });
+    }
+  };
+
+  const handleCopyAll = () => {
+    if (!generatedContent) return;
+    const text = [
+      `HEADLINE: ${generatedContent.productName}`,
+      `\nSHORT DESCRIPTION:\n${generatedContent.shortDescription}`,
+      `\nKEY BENEFITS:\n${generatedContent.bulletFeatures.map(b => `• ${b}`).join("\n")}`,
+      `\nFULL DESCRIPTION:\n${generatedContent.longDescription}`,
+    ].join("\n");
+    navigator.clipboard.writeText(text);
+    toast.success("All sections copied!");
+  };
+
+  const handleExportAll = () => {
+    if (!generatedContent) return;
+    const text = [
+      `# ${generatedContent.productName}`,
+      `\n## Short Description\n${generatedContent.shortDescription}`,
+      `\n## Key Benefits\n${generatedContent.bulletFeatures.map(b => `- ${b}`).join("\n")}`,
+      `\n## Full Description\n${generatedContent.longDescription}`,
+    ].join("\n");
+    const title = (productName || "product").replace(/[^a-zA-Z0-9 ]/g, "").trim().replace(/\s+/g, "-");
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${title}-description.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Exported as .md");
+  };
+
+  const longWordCount = generatedContent
+    ? generatedContent.longDescription.split(/\s+/).filter(w => w.length > 0).length
+    : 0;
 
   return (
     <AppLayout>
@@ -585,11 +661,19 @@ export default function ProductDescriptions() {
 
               {/* Action Bar */}
               <div className="flex items-center justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={handleCopyAll}>
+                  <Copy className="w-4 h-4" />
+                  Copy All
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExportAll}>
+                  <FileDown className="w-4 h-4" />
+                  Export
+                </Button>
                 <SaveContentButton
                   contentType="product"
                   disabled={!generatedContent}
                   getTitle={() => productName || "Untitled Product"}
-                  getBody={() => `${generatedContent!.headline}\n\n${generatedContent!.shortDesc}\n\n${generatedContent!.longDesc}`}
+                  getBody={() => `${generatedContent!.productName}\n\n${generatedContent!.shortDescription}\n\n${generatedContent!.longDescription}`}
                   getGeneratedOutput={() => generatedContent}
                   getInputData={() => ({ productName, category, audience, features, tone, brandId: selectedBrandId !== "none" ? selectedBrandId : undefined })}
                 />
@@ -604,11 +688,12 @@ export default function ProductDescriptions() {
                         <Star className="w-4 h-4 text-green-400" />
                       </div>
                       <span className="text-sm font-semibold">Headline</span>
+                      <Pencil className="w-3 h-3 text-foreground-subtle" />
                     </div>
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      onClick={() => handleCopy("headline", generatedContent.headline)}
+                      onClick={() => handleCopy("headline", generatedContent.productName)}
                     >
                       {copiedSection === "headline" ? (
                         <Check className="w-4 h-4 text-success" />
@@ -617,7 +702,11 @@ export default function ProductDescriptions() {
                       )}
                     </Button>
                   </div>
-                  <h2 className="text-2xl font-semibold leading-tight">{generatedContent.headline}</h2>
+                  <input
+                    value={generatedContent.productName}
+                    onChange={(e) => updateField("productName", e.target.value)}
+                    className="w-full bg-transparent text-2xl font-semibold leading-tight outline-none border-b border-transparent focus:border-green-500/30 transition-colors py-1"
+                  />
                 </CardContent>
               </Card>
 
@@ -630,26 +719,44 @@ export default function ProductDescriptions() {
                         <Check className="w-4 h-4 text-green-400" />
                       </div>
                       <span className="text-sm font-semibold">Bullet Benefits</span>
+                      <span className="text-xs text-foreground-subtle">{generatedContent.bulletFeatures.length} items</span>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => handleCopy("bullets", generatedContent.bullets.map(b => `• ${b}`).join("\n"))}
-                    >
-                      {copiedSection === "bullets" ? (
-                        <Check className="w-4 h-4 text-success" />
-                      ) : (
-                        <Copy className="w-4 h-4" />
-                      )}
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon-sm" onClick={addBullet} title="Add bullet">
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => handleCopy("bullets", generatedContent.bulletFeatures.map(b => `• ${b}`).join("\n"))}
+                      >
+                        {copiedSection === "bullets" ? (
+                          <Check className="w-4 h-4 text-success" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
                   <ul className="space-y-3">
-                    {generatedContent.bullets.map((bullet, index) => (
-                      <li key={index} className="flex items-start gap-3">
-                        <div className="w-6 h-6 rounded-full bg-success/10 flex items-center justify-center mt-0.5 flex-shrink-0">
+                    {generatedContent.bulletFeatures.map((bullet, index) => (
+                      <li key={index} className="flex items-start gap-3 group/bullet">
+                        <div className="w-6 h-6 rounded-full bg-success/10 flex items-center justify-center mt-1.5 flex-shrink-0">
                           <Check className="w-3.5 h-3.5 text-success" />
                         </div>
-                        <span className="text-foreground-muted leading-relaxed">{bullet}</span>
+                        <input
+                          value={bullet}
+                          onChange={(e) => updateBullet(index, e.target.value)}
+                          className="flex-1 bg-transparent text-foreground-muted leading-relaxed outline-none border-b border-transparent focus:border-green-500/30 transition-colors py-0.5"
+                        />
+                        {generatedContent.bulletFeatures.length > 1 && (
+                          <button
+                            onClick={() => removeBullet(index)}
+                            className="opacity-0 group-hover/bullet:opacity-100 text-foreground-subtle hover:text-destructive transition-all mt-1.5"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -665,12 +772,12 @@ export default function ProductDescriptions() {
                         <Zap className="w-4 h-4 text-green-400" />
                       </div>
                       <span className="text-sm font-semibold">Short Description</span>
-                      <span className="text-xs text-foreground-subtle">{generatedContent.shortDesc.length} chars</span>
+                      <span className="text-xs text-foreground-subtle">{generatedContent.shortDescription.length} chars</span>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      onClick={() => handleCopy("short", generatedContent.shortDesc)}
+                      onClick={() => handleCopy("short", generatedContent.shortDescription)}
                     >
                       {copiedSection === "short" ? (
                         <Check className="w-4 h-4 text-success" />
@@ -679,7 +786,12 @@ export default function ProductDescriptions() {
                       )}
                     </Button>
                   </div>
-                  <MarkdownRenderer content={generatedContent.shortDesc} />
+                  <textarea
+                    value={generatedContent.shortDescription}
+                    onChange={(e) => updateField("shortDescription", e.target.value)}
+                    className="w-full bg-transparent text-foreground-muted leading-relaxed text-sm resize-none outline-none border border-transparent focus:border-green-500/20 rounded-lg focus:bg-background-surface/50 transition-all p-2 -ml-2"
+                    rows={3}
+                  />
                 </CardContent>
               </Card>
 
@@ -692,11 +804,12 @@ export default function ProductDescriptions() {
                         <Package className="w-4 h-4 text-green-400" />
                       </div>
                       <span className="text-sm font-semibold">Long Description</span>
+                      <span className="text-xs text-foreground-subtle">{longWordCount} words</span>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      onClick={() => handleCopy("long", generatedContent.longDesc)}
+                      onClick={() => handleCopy("long", generatedContent.longDescription)}
                     >
                       {copiedSection === "long" ? (
                         <Check className="w-4 h-4 text-success" />
@@ -705,7 +818,12 @@ export default function ProductDescriptions() {
                       )}
                     </Button>
                   </div>
-                  <MarkdownRenderer content={generatedContent.longDesc} />
+                  <textarea
+                    value={generatedContent.longDescription}
+                    onChange={(e) => updateField("longDescription", e.target.value)}
+                    className="w-full bg-transparent text-foreground-muted leading-relaxed text-sm resize-none outline-none border border-transparent focus:border-green-500/20 rounded-lg focus:bg-background-surface/50 transition-all p-3 -ml-3 min-h-[200px]"
+                    rows={Math.max(8, generatedContent.longDescription.split("\n").length)}
+                  />
                 </CardContent>
               </Card>
             </div>

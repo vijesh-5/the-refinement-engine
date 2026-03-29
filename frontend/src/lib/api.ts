@@ -65,10 +65,10 @@ export interface AdContent {
 
 export interface ProductContent {
   id: string;
-  headline: string;
-  bullets: string[];
-  shortDesc: string;
-  longDesc: string;
+  productName: string;
+  bulletFeatures: string[];
+  shortDescription: string;
+  longDescription: string;
   score: ContentScore;
   reasoningSummary?: string;
 }
@@ -475,8 +475,252 @@ export const getCompetitors = async (brandId: string) => {
   return fetchWithAuth<CompetitorInsight[]>(`${API_BASE_URL}/competitors/brand/${brandId}`);
 };
 
+// ============================================
+// PHASE 11 — MEDIA ASSETS
+// ============================================
+
+export interface ContentAsset {
+  id: string;
+  contentId: string;
+  assetType: "image" | "video" | "audio" | "other";
+  url: string;
+  publicId: string | null;
+  metadata: any;
+  createdAt: string;
+}
+
+export const generateImage = async (
+  contentId: string,
+  prompt?: string
+): Promise<ApiResponse<ContentAsset>> => {
+  return fetchWithAuth<ContentAsset>(`${API_BASE_URL}/content/${contentId}/assets/generate-image`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt }),
+  });
+};
+
+export const listAssets = async (contentId: string): Promise<ApiResponse<ContentAsset[]>> => {
+  return fetchWithAuth<ContentAsset[]>(`${API_BASE_URL}/content/${contentId}/assets`);
+};
+
+export const deleteAsset = async (contentId: string, assetId: string): Promise<ApiResponse<unknown>> => {
+  return fetchWithAuth(`${API_BASE_URL}/content/${contentId}/assets/${assetId}`, {
+    method: "DELETE",
+  });
+};
+
 export const deleteCompetitor = async (id: string) => {
   return fetchWithAuth(`${API_BASE_URL}/competitors/${id}`, {
     method: "DELETE",
   });
+};
+
+// ============================================
+// PHASE 11 — EXPORT
+// ============================================
+
+export type ExportFormat = "pdf" | "html" | "docx";
+
+export const exportContent = async (contentId: string, format: ExportFormat): Promise<void> => {
+  const token = localStorage.getItem("accessToken");
+  const response = await fetch(`${API_BASE_URL}/content/${contentId}/export?format=${format}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error("Export failed");
+
+  const blob = await response.blob();
+  const disposition = response.headers.get("content-disposition") ?? "";
+  const filename = disposition.match(/filename="(.+)"/)?.[1] ?? `content.${format}`;
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+// ============================================
+// PHASE 12 — SOCIAL FORMATTER
+// ============================================
+
+export type SocialPlatform = "x" | "linkedin" | "caption" | "all";
+
+export interface SocialFormats {
+  x?: { thread: string[] };
+  linkedin?: { slides: Array<{ heading: string; content: string }> };
+  caption?: { text: string; hashtags: string[] };
+}
+
+export const formatSocial = async (data: {
+  content: string;
+  title: string;
+  platform: SocialPlatform;
+  url?: string;
+}): Promise<ApiResponse<SocialFormats>> => {
+  return fetchWithAuth<SocialFormats>(`${API_BASE_URL}/format/social`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+};
+
+// ============================================
+// PHASE 12 — PUBLIC SHARE LINKS
+// ============================================
+
+export interface ShareLink {
+  id: string;
+  slug: string;
+  isActive: boolean;
+  contentId: string;
+  createdAt: string;
+  shareUrl: string;
+}
+
+export const createShareLink = async (contentId: string): Promise<ApiResponse<ShareLink>> => {
+  return fetchWithAuth<ShareLink>(`${API_BASE_URL}/content/${contentId}/share`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+};
+
+export const listShareLinks = async (contentId: string): Promise<ApiResponse<ShareLink[]>> => {
+  return fetchWithAuth<ShareLink[]>(`${API_BASE_URL}/content/${contentId}/share`);
+};
+
+export const revokeShareLink = async (contentId: string, linkId: string): Promise<ApiResponse<unknown>> => {
+  return fetchWithAuth(`${API_BASE_URL}/content/${contentId}/share/${linkId}`, {
+    method: "DELETE",
+  });
+};
+
+// Unauthenticated public reader (no auth headers)
+export interface PublicContentView {
+  title: string;
+  body: string;
+  contentType: string;
+  funnelStage: string | null;
+  createdAt: string;
+}
+
+export const getPublicContent = async (slug: string): Promise<ApiResponse<PublicContentView>> => {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL?.replace("/api", "") ?? "http://localhost:5000"}/public/${slug}`
+  );
+  return handleResponse<PublicContentView>(response);
+};
+
+// ============================================
+// PHASE 13 — A/B VARIANTS
+// ============================================
+
+export interface AbVariant {
+  id: string;
+  contentId: string;
+  variantLabel: string;
+  contentText: string;
+  createdAt: string;
+}
+
+export const createVariant = async (
+  contentId: string,
+  opts?: { variantLabel?: string; focus?: string }
+): Promise<ApiResponse<AbVariant>> => {
+  return fetchWithAuth<AbVariant>(`${API_BASE_URL}/content/${contentId}/variants`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(opts ?? {}),
+  });
+};
+
+export const listVariants = async (contentId: string): Promise<ApiResponse<AbVariant[]>> => {
+  return fetchWithAuth<AbVariant[]>(`${API_BASE_URL}/content/${contentId}/variants`);
+};
+
+export const deleteVariant = async (
+  contentId: string,
+  variantId: string
+): Promise<ApiResponse<unknown>> => {
+  return fetchWithAuth(`${API_BASE_URL}/content/${contentId}/variants/${variantId}`, {
+    method: "DELETE",
+  });
+};
+
+// ============================================
+// PHASE 13 — ANALYTICS
+// ============================================
+
+export interface PerformanceTrend {
+  contentId: string;
+  title: string;
+  totalImpressions: number;
+  totalClicks: number;
+  avgCTR: number;
+  avgPosition: number;
+  trend: "rising" | "stable" | "declining";
+  deltaImpressions: number;
+  deltaCTR: number;
+}
+
+export interface PerformanceRow {
+  id: string;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+  avgPosition: number;
+  date: string;
+}
+
+export const getAnalyticsTrends = async (days = 28): Promise<ApiResponse<PerformanceTrend[]>> => {
+  return fetchWithAuth<PerformanceTrend[]>(`${API_BASE_URL}/analytics/trends?days=${days}`);
+};
+
+export const getContentPerformance = async (
+  id: string,
+  days = 90
+): Promise<ApiResponse<{ content: { id: string; title: string }; rows: PerformanceRow[] }>> => {
+  return fetchWithAuth(`${API_BASE_URL}/analytics/content/${id}?days=${days}`);
+};
+
+export const triggerGSCSync = async (): Promise<ApiResponse<{ message: string }>> => {
+  return fetchWithAuth<{ message: string }>(`${API_BASE_URL}/analytics/sync`, { method: "POST" });
+};
+
+// ============================================
+// CONTENT-DERIVED ANALYTICS
+// ============================================
+
+export interface ContentAnalyticsItem {
+  id: string;
+  title: string;
+  contentType: string;
+  status: string;
+  createdAt: string;
+  wordCount: number;
+  score: { total: number; readability: number; seo: number; engagement: number } | null;
+  versions: number;
+  abVariants: number;
+}
+
+export interface ContentAnalytics {
+  summary: {
+    totalContent: number;
+    totalWords: number;
+    totalVersions: number;
+    avgScore: number;
+    avgReadability: number;
+    avgSEO: number;
+    avgEngagement: number;
+  };
+  byType: Record<string, number>;
+  timeline: Array<{ week: string; count: number }>;
+  topPerformers: ContentAnalyticsItem[];
+  lowPerformers: ContentAnalyticsItem[];
+  items: ContentAnalyticsItem[];
+}
+
+export const getAnalyticsOverview = async (): Promise<ApiResponse<ContentAnalytics>> => {
+  return fetchWithAuth<ContentAnalytics>(`${API_BASE_URL}/analytics/overview`);
 };

@@ -9,7 +9,8 @@ import {
   Settings,
   ChevronRight,
   Briefcase,
-  Target
+  Target,
+  BarChart3
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -117,6 +118,12 @@ export function AppSidebar() {
             icon={<FileText className="w-4 h-4" />} 
             label="My Content" 
             isActive={pathname === '/app/content'}
+          />
+          <NavItem 
+            to="/app/analytics" 
+            icon={<BarChart3 className="w-4 h-4" />} 
+            label="Analytics" 
+            isActive={pathname === '/app/analytics'}
           />
           <NavItem 
             to="/app/templates" 

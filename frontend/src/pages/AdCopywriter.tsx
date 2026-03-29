@@ -31,7 +31,10 @@ import {
   AlertTriangle,
   History as HistoryIcon,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Pencil,
+  Download,
+  FileDown,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
@@ -230,6 +233,37 @@ export default function AdCopywriter() {
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 2000);
   };
+
+  const handleCopyAll = () => {
+    const allText = variations.map((v, i) =>
+      `--- Variation ${i + 1} ---\nHeadline: ${v.headline}\nPrimary Text: ${v.primaryText}\nCTA: ${v.cta}`
+    ).join("\n\n");
+    navigator.clipboard.writeText(allText);
+    toast.success("All variations copied!");
+  };
+
+  const handleExportAll = () => {
+    const allText = variations.map((v, i) =>
+      `--- Variation ${i + 1} ---\nHeadline: ${v.headline}\n\nPrimary Text:\n${v.primaryText}\n\nCTA: ${v.cta}`
+    ).join("\n\n" + "=".repeat(40) + "\n\n");
+    const title = (product || "ad-copy").replace(/[^a-zA-Z0-9 ]/g, "").trim().replace(/\s+/g, "-");
+    const blob = new Blob([allText], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${title}-variations.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Exported as .txt");
+  };
+
+  const updateVariation = (index: number, field: keyof AdVariant, value: string | string[]) => {
+    setVariations(prev => prev.map((v, i) => i === index ? { ...v, [field]: value } : v));
+  };
+
+  const currentMaxLength = platforms.find(p => p.id === selectedPlatform)?.maxLength || 150;
 
   const getScoreColor = (score: number) => {
     if (score >= 85) return "text-success";
@@ -534,6 +568,14 @@ export default function AdCopywriter() {
                   <RefreshCw className="w-4 h-4" />
                   Regenerate
                 </Button>
+                <Button variant="outline" size="sm" onClick={handleCopyAll}>
+                  <Copy className="w-4 h-4" />
+                  Copy All
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExportAll}>
+                  <FileDown className="w-4 h-4" />
+                  Export
+                </Button>
                 <SaveContentButton
                   contentType="ad"
                   disabled={variations.length === 0}
@@ -594,13 +636,23 @@ export default function AdCopywriter() {
                               <div className="flex items-center gap-2 mb-1">
                                 <Eye className="w-3 h-3 text-foreground-subtle" />
                                 <span className="text-xs text-foreground-subtle uppercase tracking-wide">Headline</span>
-                                {score && (
-                                  <span className={`text-xs font-medium ${getScoreColor(score.engagement)}`}>
-                                    {score.engagement}
-                                  </span>
-                                )}
+                                <span className={`text-xs ml-auto ${variation.headline.length > currentMaxLength ? 'text-destructive' : 'text-foreground-subtle'}`}>
+                                  {variation.headline.length}/{currentMaxLength}
+                                </span>
                               </div>
-                              <p className="text-lg font-semibold">{variation.headline}</p>
+                              <textarea
+                                value={variation.headline}
+                                onChange={(e) => updateVariation(index, "headline", e.target.value)}
+                                className="w-full bg-transparent text-lg font-semibold resize-none outline-none border-b border-transparent focus:border-primary/30 transition-colors py-1"
+                                rows={1}
+                              />
+                              {/* Character limit bar */}
+                              <div className="w-full h-1 rounded-full bg-muted mt-1.5 overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all ${variation.headline.length > currentMaxLength ? 'bg-destructive' : variation.headline.length > currentMaxLength * 0.8 ? 'bg-warning' : 'bg-success'}`}
+                                  style={{ width: `${Math.min(100, (variation.headline.length / currentMaxLength) * 100)}%` }}
+                                />
+                              </div>
                             </div>
 
                             {/* Body */}
@@ -608,24 +660,27 @@ export default function AdCopywriter() {
                               <div className="flex items-center gap-2 mb-1">
                                 <TrendingUp className="w-3 h-3 text-foreground-subtle" />
                                 <span className="text-xs text-foreground-subtle uppercase tracking-wide">Primary Text</span>
-                                {score && (
-                                  <span className={`text-xs font-medium ${getScoreColor(score.readability)}`}>
-                                    {score.readability}
-                                  </span>
-                                )}
+                                <span className="text-xs text-foreground-subtle ml-auto">
+                                  {variation.primaryText.split(/\s+/).filter(w => w.length > 0).length} words
+                                </span>
                               </div>
-                              <MarkdownRenderer content={variation.primaryText} />
+                              <textarea
+                                value={variation.primaryText}
+                                onChange={(e) => updateVariation(index, "primaryText", e.target.value)}
+                                className="w-full bg-transparent text-sm text-foreground-muted leading-relaxed resize-none outline-none border border-transparent focus:border-primary/20 rounded-lg focus:bg-background-surface/50 transition-all p-2 -ml-2"
+                                rows={Math.max(3, variation.primaryText.split("\n").length)}
+                              />
                             </div>
 
                             {/* CTA */}
                             <div className="flex items-center gap-3 pt-4 border-t border-border-subtle">
-                              <MousePointer className="w-4 h-4 text-primary" />
-                              <span className="font-semibold text-primary">{variation.cta}</span>
-                              {score && (
-                                <span className={`text-xs font-medium ${getScoreColor(score.engagement)}`}>
-                                  CTA Score: {score.engagement}
-                                </span>
-                              )}
+                              <MousePointer className="w-4 h-4 text-primary flex-shrink-0" />
+                              <input
+                                value={variation.cta}
+                                onChange={(e) => updateVariation(index, "cta", e.target.value)}
+                                className="bg-transparent font-semibold text-primary outline-none border-b border-transparent focus:border-primary/30 transition-colors flex-1 py-0.5"
+                              />
+                              <Pencil className="w-3 h-3 text-foreground-subtle opacity-0 group-hover:opacity-50" />
                             </div>
                           </div>
                         </div>

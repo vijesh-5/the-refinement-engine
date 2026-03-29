@@ -5,7 +5,10 @@ import { authenticate } from "../middleware/auth.middleware";
 const router = Router();
 router.use(authenticate);
 
-// Library-wide trends
+// Content-derived analytics overview (no GSC needed)
+router.get("/overview", analyticsController.getOverview);
+
+// Library-wide trends (requires GSC performance data)
 router.get("/trends", analyticsController.getTrends);
 
 // GSC sync trigger (fire-and-forget, returns 202)

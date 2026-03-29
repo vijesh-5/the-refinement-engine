@@ -164,6 +164,117 @@ class AnalyticsService {
   }
 
   /**
+   * Content-derived analytics — works with NO external integrations.
+   * Aggregates scores, types, creation timeline, word counts, and versions
+   * from the user's actual content library.
+   */
+  async getContentAnalytics(userId: string) {
+    const contents = await prisma.content.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        title: true,
+        contentType: true,
+        body: true,
+        status: true,
+        generatedOutput: true,
+        createdAt: true,
+        _count: { select: { versions: true, abVariants: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // Per-content breakdown with scores
+    const items = contents.map((c) => {
+      const output = c.generatedOutput as any;
+      const score = output?.score || null;
+      const wordCount = c.body
+        ? c.body.replace(/[#*_`\[\]()>{}]/g, " ").split(/\s+/).filter((w: string) => w.length > 1).length
+        : 0;
+
+      return {
+        id: c.id,
+        title: c.title,
+        contentType: c.contentType,
+        status: c.status,
+        createdAt: c.createdAt,
+        wordCount,
+        score: score ? {
+          total: score.total || 0,
+          readability: score.readability || 0,
+          seo: score.seo || 0,
+          engagement: score.engagement || 0,
+        } : null,
+        versions: c._count.versions,
+        abVariants: c._count.abVariants,
+      };
+    });
+
+    // Aggregate stats
+    const totalContent = items.length;
+    const totalWords = items.reduce((acc, i) => acc + i.wordCount, 0);
+    const totalVersions = items.reduce((acc, i) => acc + i.versions, 0);
+    const scoredItems = items.filter((i) => i.score);
+    const avgScore = scoredItems.length
+      ? Math.round(scoredItems.reduce((acc, i) => acc + (i.score?.total || 0), 0) / scoredItems.length)
+      : 0;
+    const avgReadability = scoredItems.length
+      ? Math.round(scoredItems.reduce((acc, i) => acc + (i.score?.readability || 0), 0) / scoredItems.length)
+      : 0;
+    const avgSEO = scoredItems.length
+      ? Math.round(scoredItems.reduce((acc, i) => acc + (i.score?.seo || 0), 0) / scoredItems.length)
+      : 0;
+    const avgEngagement = scoredItems.length
+      ? Math.round(scoredItems.reduce((acc, i) => acc + (i.score?.engagement || 0), 0) / scoredItems.length)
+      : 0;
+
+    // Content by type
+    const byType: Record<string, number> = {};
+    items.forEach((i) => {
+      byType[i.contentType] = (byType[i.contentType] || 0) + 1;
+    });
+
+    // Creation timeline (group by week)
+    const timeline: Array<{ week: string; count: number }> = [];
+    const weekMap: Record<string, number> = {};
+    items.forEach((i) => {
+      const d = new Date(i.createdAt);
+      const weekStart = new Date(d);
+      weekStart.setDate(d.getDate() - d.getDay());
+      const key = weekStart.toISOString().split("T")[0];
+      weekMap[key] = (weekMap[key] || 0) + 1;
+    });
+    Object.entries(weekMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .forEach(([week, count]) => timeline.push({ week, count }));
+
+    // Top/bottom performers by score
+    const topPerformers = [...scoredItems]
+      .sort((a, b) => (b.score?.total || 0) - (a.score?.total || 0))
+      .slice(0, 5);
+    const lowPerformers = [...scoredItems]
+      .sort((a, b) => (a.score?.total || 0) - (b.score?.total || 0))
+      .slice(0, 5);
+
+    return {
+      summary: {
+        totalContent,
+        totalWords,
+        totalVersions,
+        avgScore,
+        avgReadability,
+        avgSEO,
+        avgEngagement,
+      },
+      byType,
+      timeline,
+      topPerformers,
+      lowPerformers,
+      items,
+    };
+  }
+
+  /**
    * Get performance history for a single content item.
    */
   async getContentPerformance(contentId: string, userId: string, days = 90) {

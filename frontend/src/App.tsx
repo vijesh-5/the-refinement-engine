@@ -16,6 +16,9 @@ import Library from "./pages/Library";
 import Templates from "./pages/Templates";
 import BrandProfiles from "./pages/BrandProfiles";
 import CompetitorAnalysis from "./pages/CompetitorAnalysis";
+import ContentDetail from "./pages/ContentDetail";
+import Analytics from "./pages/Analytics";
+import PublicReader from "./pages/PublicReader";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -40,6 +43,8 @@ const App = () => (
             <Route path="/app/ads" element={<AdCopywriter />} />
             <Route path="/app/products" element={<ProductDescriptions />} />
             <Route path="/app/content" element={<Library />} />
+            <Route path="/app/content/:id" element={<ContentDetail />} />
+            <Route path="/app/analytics" element={<Analytics />} />
             <Route path="/app/templates" element={<Templates />} />
             <Route path="/app/brands" element={<BrandProfiles />} />
             <Route path="/app/competitors" element={<CompetitorAnalysis />} />
@@ -47,6 +52,7 @@ const App = () => (
           </Route>
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/public/:slug" element={<PublicReader />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
