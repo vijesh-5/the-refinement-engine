@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listContent, deleteContentItem, ContentItem } from "@/lib/api";
+import { listContent, deleteContentItem, ContentItem, exportContent } from "@/lib/api";
 import { toast } from "sonner";
 import {
   Search,
@@ -23,6 +23,8 @@ import {
   Loader2,
   Layers,
   ExternalLink,
+  LayoutList,
+  FileDown,
 } from "lucide-react";
 
 type ContentType = "all" | "blog" | "ad" | "product";
@@ -228,6 +230,20 @@ export default function Library() {
                             Open in Editor
                           </button>
                           <button
+                            onClick={() => { navigate(`/app/content/${item.id}`); setActiveMenu(null); }}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground-muted hover:bg-background-hover transition-colors"
+                          >
+                            <LayoutList className="w-4 h-4" />
+                            View Details
+                          </button>
+                          <button
+                            onClick={() => { exportContent(item.id, "pdf"); setActiveMenu(null); }}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground-muted hover:bg-background-hover transition-colors"
+                          >
+                            <FileDown className="w-4 h-4" />
+                            Export PDF
+                          </button>
+                          <button
                             onClick={() => handleCopy(item)}
                             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground-muted hover:bg-background-hover transition-colors"
                           >
@@ -307,6 +323,12 @@ export default function Library() {
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button variant="ghost" size="icon-sm" onClick={() => navigate(getEditorPath(item))} title="Open in Editor">
                       <ExternalLink className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon-sm" onClick={() => navigate(`/app/content/${item.id}`)} title="View Details">
+                      <LayoutList className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon-sm" onClick={() => exportContent(item.id, "pdf")} title="Export PDF">
+                      <FileDown className="w-4 h-4" />
                     </Button>
                     <Button variant="ghost" size="icon-sm" onClick={() => handleCopy(item)}>
                       <Copy className="w-4 h-4" />

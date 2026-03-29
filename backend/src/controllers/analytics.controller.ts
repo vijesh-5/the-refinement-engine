@@ -40,6 +40,17 @@ export const getTrends = asyncHandler(
 );
 
 /**
+ * GET /api/analytics/overview
+ * Content-derived analytics — no GSC needed.
+ */
+export const getOverview = asyncHandler(
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const data = await analyticsService.getContentAnalytics(req.user!.id);
+    res.json({ success: true, data });
+  },
+);
+
+/**
  * GET /api/analytics/content/:id?days=90
  * Detailed performance history for a single content item.
  */
