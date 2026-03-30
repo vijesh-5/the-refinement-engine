@@ -4,6 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getPlatforms, upsertPlatform, deletePlatform, ConnectedPlatform } from "@/lib/api";
+import { toast } from "sonner";
 import { 
   User, 
   Bell, 
@@ -11,16 +14,164 @@ import {
   CreditCard, 
   Shield,
   Check,
-  ArrowRight
+  Plug,
+  Mail,
+  Trash2,
+  Loader2
 } from "lucide-react";
 
 const tabs = [
   { id: "account", label: "Account", icon: User },
   { id: "preferences", label: "Preferences", icon: Palette },
+  { id: "integrations", label: "Integrations", icon: Plug },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "billing", label: "Billing", icon: CreditCard },
   { id: "security", label: "Security", icon: Shield },
 ];
+
+function IntegrationsTab() {
+  const queryClient = useQueryClient();
+  const [bearEmail, setBearEmail] = useState("");
+
+  const { data: platformsRes, isLoading } = useQuery({
+    queryKey: ["platforms"],
+    queryFn: getPlatforms,
+  });
+
+  const platforms = platformsRes?.data ?? [];
+  const bearBlog = platforms.find((p: ConnectedPlatform) => p.platformName === "BEAR_BLOG");
+
+  const upsertMutation = useMutation({
+    mutationFn: () =>
+      upsertPlatform({
+        platformName: "BEAR_BLOG",
+        credentials: { email: bearEmail },
+        isActive: true,
+      }),
+    onSuccess: () => {
+      toast.success("Bear Blog connected successfully!");
+      queryClient.invalidateQueries({ queryKey: ["platforms"] });
+      setBearEmail("");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deletePlatform(id),
+    onSuccess: () => {
+      toast.success("Bear Blog disconnected");
+      queryClient.invalidateQueries({ queryKey: ["platforms"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  return (
+    <div className="space-y-6">
+      <Card variant="default">
+        <CardContent className="p-8">
+          <h3 className="font-semibold text-lg mb-2">Connected Platforms</h3>
+          <p className="text-sm text-foreground-muted mb-8">
+            Connect your publishing platforms to distribute content directly from Artifex.
+          </p>
+
+          {/* Bear Blog */}
+          <div className="p-5 rounded-xl bg-background-surface border border-border-subtle">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500/20 to-amber-500/10 border border-orange-500/20 flex items-center justify-center flex-shrink-0">
+                <Mail className="w-5 h-5 text-orange-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 mb-1">
+                  <h4 className="font-semibold">Bear Blog</h4>
+                  {bearBlog && (
+                    <span className={`text-xs px-2.5 py-1 rounded-full ${
+                      bearBlog.isActive
+                        ? "bg-success/10 text-success"
+                        : "bg-muted text-foreground-muted"
+                    }`}>
+                      {bearBlog.isActive ? "Connected" : "Inactive"}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-foreground-muted mb-4">
+                  Publish drafts via email to your Bear Blog. Enter your secret Bear Blog email address below.
+                </p>
+
+                {isLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-foreground-muted">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Loading...
+                  </div>
+                ) : bearBlog ? (
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-lg bg-background border border-border-subtle">
+                      <Mail className="w-4 h-4 text-foreground-subtle" />
+                      <span className="text-sm font-mono truncate">{(bearBlog.credentials as Record<string, string>).email}</span>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deleteMutation.mutate(bearBlog.id)}
+                      disabled={deleteMutation.isPending}
+                    >
+                      {deleteMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <Input
+                      type="email"
+                      placeholder="your-secret@bearblog.dev"
+                      value={bearEmail}
+                      onChange={(e) => setBearEmail(e.target.value)}
+                      className="h-11 flex-1"
+                    />
+                    <Button
+                      onClick={() => upsertMutation.mutate()}
+                      disabled={!bearEmail || upsertMutation.isPending}
+                    >
+                      {upsertMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "Connect"
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Future platforms */}
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+            {[
+              { name: "X (Twitter)", desc: "Coming soon", color: "from-sky-500/20 to-blue-500/10 border-sky-500/20" },
+              { name: "Reddit", desc: "Coming soon", color: "from-red-500/20 to-orange-500/10 border-red-500/20" },
+            ].map((p) => (
+              <div
+                key={p.name}
+                className="p-4 rounded-xl bg-background-surface/50 border border-border-subtle opacity-60"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${p.color} flex items-center justify-center`}>
+                    <Plug className="w-4 h-4 text-foreground-muted" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-sm">{p.name}</div>
+                    <div className="text-xs text-foreground-muted">{p.desc}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("account");
@@ -180,6 +331,8 @@ export default function Settings() {
               </CardContent>
             </Card>
           )}
+
+          {activeTab === "integrations" && <IntegrationsTab />}
 
           {activeTab === "notifications" && (
             <Card variant="default">

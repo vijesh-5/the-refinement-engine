@@ -724,3 +724,73 @@ export interface ContentAnalytics {
 export const getAnalyticsOverview = async (): Promise<ApiResponse<ContentAnalytics>> => {
   return fetchWithAuth<ContentAnalytics>(`${API_BASE_URL}/analytics/overview`);
 };
+
+// ============================================
+// CONNECTED PLATFORMS
+// ============================================
+
+export type PlatformName = "BEAR_BLOG" | "X" | "REDDIT";
+
+export interface ConnectedPlatform {
+  id: string;
+  userId: string;
+  platformName: PlatformName;
+  credentials: Record<string, string>;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const getPlatforms = async (): Promise<ApiResponse<ConnectedPlatform[]>> => {
+  return fetchWithAuth<ConnectedPlatform[]>(`${API_BASE_URL}/platforms`);
+};
+
+export const upsertPlatform = async (data: {
+  platformName: PlatformName;
+  credentials: Record<string, string>;
+  isActive?: boolean;
+}): Promise<ApiResponse<ConnectedPlatform>> => {
+  return fetchWithAuth<ConnectedPlatform>(`${API_BASE_URL}/platforms`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+};
+
+export const togglePlatform = async (
+  id: string,
+  isActive: boolean
+): Promise<ApiResponse<ConnectedPlatform>> => {
+  return fetchWithAuth<ConnectedPlatform>(`${API_BASE_URL}/platforms/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ isActive }),
+  });
+};
+
+export const deletePlatform = async (id: string): Promise<ApiResponse<unknown>> => {
+  return fetchWithAuth(`${API_BASE_URL}/platforms/${id}`, {
+    method: "DELETE",
+  });
+};
+
+// ============================================
+// DISTRIBUTION
+// ============================================
+
+export interface DistributionResult {
+  success: boolean;
+  platform: string;
+  messageId?: string;
+}
+
+export const distributeContent = async (
+  contentId: string,
+  platform: PlatformName
+): Promise<ApiResponse<DistributionResult>> => {
+  return fetchWithAuth<DistributionResult>(`${API_BASE_URL}/distribution/send`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ contentId, platform }),
+  });
+};

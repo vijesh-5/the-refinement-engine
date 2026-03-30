@@ -24,9 +24,35 @@ model User {
   topicSuggestions TopicSuggestion[]
   authorityPillars AuthorityPillar[]
   knowledgeDocuments KnowledgeDocument[]
+  connectedPlatforms ConnectedPlatform[]
 
   @@index([email])
   @@map("users")
+}
+
+// ─── Connected Platforms (Distribution) ─────────────────────────────────────
+
+enum PlatformName {
+  BEAR_BLOG
+  X
+  REDDIT
+}
+
+model ConnectedPlatform {
+  id            String       @id @default(uuid())
+  userId        String
+  platformName  PlatformName
+  credentials   Json         // { email?: string, apiKey?: string, ... }
+  isActive      Boolean      @default(true)
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platformName])
+  @@index([userId])
+  @@map("connected_platforms")
 }
 
 model BrandProfile {

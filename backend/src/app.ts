@@ -24,6 +24,8 @@ import analyticsRoutes from "./routes/analytics.routes";
 import abRoutes from "./routes/ab.routes";
 import vaultRoutes from "./routes/vault.routes";
 import personaRoutes from "./routes/persona.routes";
+import platformRoutes from "./routes/platform.routes";
+import distributionRoutes from "./routes/distribution.routes";
 
 export function createApp(): Application {
   const app = express();
@@ -104,6 +106,8 @@ export function createApp(): Application {
   // Future-ready: Knowledge Vault + Personas (storage only, not pipeline-injected)
   app.use("/api/vault", vaultRoutes);
   app.use("/api/personas", personaRoutes);
+  app.use("/api/platforms", platformRoutes);
+  app.use("/api/distribution", distributionRoutes);
   app.use("/api/diagnostics", diagnosticsRoutes);
 
   // Error handling

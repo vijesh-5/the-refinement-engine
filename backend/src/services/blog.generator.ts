@@ -39,6 +39,7 @@ export async function generateBlog(
   input: BlogInput,
 ): Promise<BlogOutput> {
   let brandContext = undefined;
+  let effectiveAudience = input.audience;
   if (input.brandId) {
     const brand = await prisma.brandProfile.findUnique({
       where: { id: input.brandId, userId },
@@ -51,6 +52,10 @@ export async function generateBlog(
         targetAudience: brand.targetAudience || undefined,
         bannedWords: brand.bannedWords,
       };
+      // Override audience with brand's target audience when available
+      if (brand.targetAudience) {
+        effectiveAudience = brand.targetAudience;
+      }
     }
   }
 
@@ -66,6 +71,7 @@ export async function generateBlog(
     // ─── Lightweight: 1 LLM call ──────────────────────────────────────
     pipelineResult = await lightweightGeneratorService.generate({
       ...input,
+      audience: effectiveAudience,
       brand: brandContext,
       length: lengthLabel,
     });
@@ -79,6 +85,7 @@ export async function generateBlog(
 
     pipelineResult = await intelligentGeneratorService.generateWithPipeline({
       ...input,
+      audience: effectiveAudience,
       brand: brandContext,
       length: lengthLabel,
       competitorContext,

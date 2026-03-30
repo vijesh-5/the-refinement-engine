@@ -63,7 +63,8 @@ class AIService {
 
   private async callOllama(prompt: string, options?: { json?: boolean }): Promise<string> {
     const baseUrl = env.OLLAMA_URL || "http://localhost:11434";
-    const model = env.OLLAMA_MODEL || "llama3:8b";
+    // const model = env.OLLAMA_MODEL || "llama3:8b";
+    const model = env.OLLAMA_MODEL || "artifex:latest";
 
     try {
       const body: any = {
@@ -178,7 +179,8 @@ class AIService {
    */
   get activeProvider(): string {
     if (this.provider === "ollama") {
-      return `Ollama (${env.OLLAMA_MODEL || "llama3:8b"})`;
+      // return `Ollama (${env.OLLAMA_MODEL || "llama3:8b"})`;
+      return `Ollama (${env.OLLAMA_MODEL || "artifex:latest"})`;
     }
     return `Gemini (${env.GEMINI_MODEL || "gemini-2.0-flash"})`;
   }

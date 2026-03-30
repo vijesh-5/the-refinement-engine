@@ -16,9 +16,15 @@ export const env = {
   GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-2.0-flash",
   AI_PROVIDER: process.env.AI_PROVIDER || "gemini",
   OLLAMA_URL: process.env.OLLAMA_URL || "http://localhost:11434",
-  OLLAMA_MODEL: process.env.OLLAMA_MODEL || "llama3:8b",
+  // OLLAMA_MODEL: process.env.OLLAMA_MODEL || "llama3:8b",
+  OLLAMA_MODEL: process.env.OLLAMA_MODEL || "artifex:latest",
   PIPELINE_MODE: process.env.PIPELINE_MODE || "auto", // "full" | "light" | "auto"
   OPENAI_API_KEY: process.env.OPENAI_API_KEY || "",    // Optional: used for DALL-E 3 image generation
+  // SMTP (for distribution service — Bear Blog email integration)
+  SMTP_HOST: process.env.SMTP_HOST || "smtp.gmail.com",
+  SMTP_PORT: parseInt(process.env.SMTP_PORT || "587", 10),
+  SMTP_USER: process.env.SMTP_USER || "",
+  SMTP_PASS: process.env.SMTP_PASS || "",
 } as const;
 
 // Validate required environment variables

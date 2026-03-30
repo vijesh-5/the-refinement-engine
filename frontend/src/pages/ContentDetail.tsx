@@ -25,6 +25,8 @@ import {
   Plus,
   ChevronRight,
   Image as ImageIcon,
+  SendHorizonal,
+  Mail,
 } from "lucide-react";
 import {
   getContentItem,
@@ -42,13 +44,17 @@ import {
   ContentAsset,
   ExportFormat,
   SocialPlatform,
+  distributeContent,
+  getPlatforms,
+  ConnectedPlatform,
 } from "@/lib/api";
 
-type Tab = "export" | "share" | "social" | "variants" | "media";
+type Tab = "export" | "share" | "social" | "variants" | "media" | "distribute";
 
 const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "export", label: "Export", icon: <Download className="w-4 h-4" /> },
   { id: "share", label: "Share", icon: <Share2 className="w-4 h-4" /> },
+  { id: "distribute", label: "Distribute", icon: <SendHorizonal className="w-4 h-4" /> },
   { id: "social", label: "Social", icon: <MessageSquare className="w-4 h-4" /> },
   { id: "media", label: "Media", icon: <ImageIcon className="w-4 h-4" /> },
   { id: "variants", label: "A/B Variants", icon: <FlaskConical className="w-4 h-4" /> },
@@ -388,6 +394,104 @@ function MediaTab({ contentId }: { contentId: string }) {
   );
 }
 
+// ─── Distribute Tab ───────────────────────────────────────────────────────────
+
+function DistributeTab({ contentId }: { contentId: string }) {
+  const { data: platformsRes, isLoading } = useQuery({
+    queryKey: ["platforms"],
+    queryFn: getPlatforms,
+  });
+
+  const platforms = platformsRes?.data ?? [];
+  const bearBlog = platforms.find((p: ConnectedPlatform) => p.platformName === "BEAR_BLOG" && p.isActive);
+
+  const distributeMutation = useMutation({
+    mutationFn: () => distributeContent(contentId, "BEAR_BLOG"),
+    onSuccess: (res) => {
+      toast.success(res.message || "Published to Bear Blog!");
+    },
+    onError: (error: Error) => toast.error(error.message || "Distribution failed"),
+  });
+
+  return (
+    <div className="space-y-5">
+      <p className="text-sm text-foreground-muted">
+        Send your content to connected platforms. The content will be formatted automatically based on its type.
+      </p>
+
+      <div className="p-5 rounded-xl bg-background-surface border border-border-subtle">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500/20 to-amber-500/10 border border-orange-500/20 flex items-center justify-center flex-shrink-0">
+            <Mail className="w-5 h-5 text-orange-400" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-1">
+              <h4 className="font-semibold">Bear Blog</h4>
+              {bearBlog && (
+                <span className="text-xs px-2.5 py-1 rounded-full bg-success/10 text-success">
+                  Connected
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-foreground-muted mb-4">
+              {bearBlog
+                ? "Send this content as a draft to your Bear Blog via email."
+                : "Connect your Bear Blog in Settings → Integrations to enable publishing."}
+            </p>
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin text-foreground-muted" />
+            ) : bearBlog ? (
+              <Button
+                onClick={() => distributeMutation.mutate()}
+                disabled={distributeMutation.isPending}
+              >
+                {distributeMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <SendHorizonal className="w-4 h-4" />
+                    Publish to Bear Blog
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={() => window.location.href = "/app/settings"}>
+                Connect Bear Blog
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Future platforms */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {[
+          { name: "X (Twitter)", desc: "Coming soon" },
+          { name: "Reddit", desc: "Coming soon" },
+        ].map((p) => (
+          <div
+            key={p.name}
+            className="p-4 rounded-xl bg-background-surface/50 border border-border-subtle opacity-60"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                <SendHorizonal className="w-4 h-4 text-foreground-muted" />
+              </div>
+              <div>
+                <div className="font-medium text-sm">{p.name}</div>
+                <div className="text-xs text-foreground-muted">{p.desc}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ContentDetail() {
@@ -460,6 +564,7 @@ export default function ContentDetail() {
         <div>
           {activeTab === "export" && <ExportTab contentId={id!} />}
           {activeTab === "share" && <ShareTab contentId={id!} />}
+          {activeTab === "distribute" && <DistributeTab contentId={id!} />}
           {activeTab === "social" && <SocialTab body={item.body} title={item.title} />}
           {activeTab === "media" && <MediaTab contentId={id!} />}
           {activeTab === "variants" && <VariantsTab contentId={id!} />}
